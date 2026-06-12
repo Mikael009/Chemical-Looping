@@ -831,8 +831,151 @@
     font-family: var(--font-mono);
   }
 
+  /* ── CO2 Analyzer Section ── */
+  .co2-section {
+    background: linear-gradient(180deg, var(--bg-dark) 0%, #0d120d 50%, var(--bg-deep) 100%);
+    border-top: 1px solid var(--border-subtle);
+  }
+  .co2-hero {
+    background: linear-gradient(135deg, #0f2e12 0%, #1a3a1e 30%, #0a0e0a 100%);
+    padding: 40px 32px; border-radius: var(--radius-xl);
+    margin-bottom: 40px; position: relative; overflow: hidden;
+  }
+  .co2-hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      90deg, rgba(74,222,128,0.04) 0px, rgba(74,222,128,0.04) 1px,
+      transparent 1px, transparent 60px
+    ), repeating-linear-gradient(
+      0deg, rgba(74,222,128,0.03) 0px, rgba(74,222,128,0.03) 1px,
+      transparent 1px, transparent 60px
+    );
+  }
+  .co2-hero-inner { position: relative; z-index: 1; }
+  .co2-hero h2 {
+    font-size: 32px; font-weight: 800; margin-bottom: 8px;
+  }
+  .co2-hero p {
+    color: var(--text-secondary); font-size: 14px;
+  }
+  .co2-gauge-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .co2-gauge {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 24px 16px;
+    text-align: center;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .co2-gauge:hover {
+    border-color: var(--border-mid);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+  }
+  .co2-gauge .status-indicator {
+    width: 10px; height: 10px; border-radius: 50%;
+    position: absolute; top: 14px; right: 14px;
+    transition: all 0.3s;
+  }
+  .co2-gauge .gauge-label {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px;
+    color: var(--text-tertiary); margin-bottom: 10px;
+  }
+  .co2-gauge .gauge-value {
+    font-family: var(--font-mono);
+    font-size: 36px; font-weight: 800;
+    letter-spacing: -2px; line-height: 1;
+  }
+  .co2-gauge .gauge-unit {
+    font-size: 12px; color: var(--text-muted); margin-top: 6px;
+  }
+  .co2-status-trace { background: var(--accent-blue); }
+  .co2-status-low { background: var(--accent-cyan); }
+  .co2-status-moderate { background: var(--accent-amber); }
+  .co2-status-normal { background: var(--accent-green); }
+  .co2-status-rich { background: var(--accent-orange); }
+  .co2-status-veryhigh { background: var(--accent-red); animation: pulse 1.2s infinite; }
+  .export-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .export-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .export-btn {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-mid);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+  }
+  .export-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+  }
+  .export-btn svg {
+    width: 14px; height: 14px;
+  }
+  .export-btn.primary {
+    background: rgba(74,222,128,0.12);
+    color: var(--accent-green);
+    border-color: transparent;
+  }
+  .export-btn.primary:hover {
+    background: rgba(74,222,128,0.2);
+  }
+  .threshold-legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 16px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    margin-bottom: 24px;
+  }
+  .threshold-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .threshold-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+
   @media (max-width: 768px) {
     .monitor-grid { grid-template-columns: repeat(3, 1fr); }
+    .co2-gauge-row { grid-template-columns: repeat(2, 1fr); }
     .results-grid { grid-template-columns: 1fr; }
     .nav-links { display: none; }
     .thermo-grid { grid-template-columns: repeat(2, 1fr); }
@@ -859,8 +1002,9 @@
       <li><a href="#results">Results</a></li>
       <li><a href="#research">Research</a></li>
       <li><a href="#monitor">Live Monitor</a></li>
+      <li><a href="#co2">CO₂ Analyzer</a></li>
     </ul>
-    <a href="#monitor" class="nav-cta">Launch Monitor</a>
+    <a href="#co2" class="nav-cta">CO₂ Analyzer</a>
   </div>
 </nav>
 
@@ -1406,12 +1550,11 @@
       <div class="section-label">Computational Research</div>
       <h2 class="section-title">CFD Modeling & Machine Learning for Oxygen Carrier Selection</h2>
       <p class="section-desc">
-        Our computational research leverages Eulerian-Eulerian CFD simulations and machine learning 
+        Our computational research leverages Eulerian-Eulerian CFD simulations and machine learning
         models to optimize oxygen carrier performance and reactor design in chemical looping systems.
       </p>
     </div>
 
-    <!-- Publication Cards -->
     <div class="two-col" style="margin-bottom: 48px;">
       <div class="pub-card fade-in stagger-1">
         <div class="pub-badge journal">Journal Article</div>
@@ -1439,7 +1582,6 @@
       </div>
     </div>
 
-    <!-- Key Findings from CFD Paper -->
     <div class="section-header fade-in" style="margin-bottom: 32px;">
       <div class="section-label" style="color: var(--accent-blue);">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:6px;">
@@ -1455,8 +1597,8 @@
         <div class="insight-icon" style="background: rgba(96,165,250,0.1); color: var(--accent-blue);">🔬</div>
         <h4>Simulation Methodology</h4>
         <p>
-          2D transient Eulerian-Eulerian CFD simulations using Two Fluid Model (TFM) coupled with 
-          Kinetic Theory of Granular Flow (KTGF) and Changing Grain Size Model (CGSM) for heterogeneous 
+          2D transient Eulerian-Eulerian CFD simulations using Two Fluid Model (TFM) coupled with
+          Kinetic Theory of Granular Flow (KTGF) and Changing Grain Size Model (CGSM) for heterogeneous
           reactions. The 120 kW<sub>th</sub> DCFB reactor operates with AR in fast fluidization and FR in turbulent regime.
         </p>
       </div>
@@ -1464,8 +1606,8 @@
         <div class="insight-icon" style="background: rgba(74,222,128,0.1); color: var(--accent-green);">⚗️</div>
         <h4>Base Case Validation (NiO/Al<sub>2</sub>O<sub>3</sub>)</h4>
         <p>
-          Simulation validated against experimental data from Vienna University of Technology. 
-          Combustion efficiency of ~84% achieved with NiO oxygen carrier. Model successfully captures 
+          Simulation validated against experimental data from Vienna University of Technology.
+          Combustion efficiency of ~84% achieved with NiO oxygen carrier. Model successfully captures
           pressure profiles and gas species mole fractions with reasonable accuracy.
         </p>
       </div>
@@ -1473,14 +1615,13 @@
         <div class="insight-icon" style="background: rgba(251,191,36,0.1); color: var(--accent-amber);">🌍</div>
         <h4>Pakistani Natural Ores</h4>
         <p>
-          Two locally sourced ores evaluated: <strong>Hematite (Fe<sub>2</sub>O<sub>3</sub>)</strong> from Langrial, Hazara 
-          (52.68% Fe<sub>2</sub>O<sub>3</sub>) and <strong>Manganosite (MnO)</strong> from Bela Ophiolite Complex 
+          Two locally sourced ores evaluated: <strong>Hematite (Fe<sub>2</sub>O<sub>3</sub>)</strong> from Langrial, Hazara
+          (52.68% Fe<sub>2</sub>O<sub>3</sub>) and <strong>Manganosite (MnO)</strong> from Bela Ophiolite Complex
           (33.4% MnO). Both represent cost-effective, environmentally friendly alternatives to synthetic carriers.
         </p>
       </div>
     </div>
 
-    <!-- Combustion Efficiency Comparison -->
     <div class="showcase fade-in stagger-2" style="margin-top: 32px;">
       <div class="showcase-header">
         <h3>Combustion Efficiency Comparison</h3>
@@ -1488,47 +1629,38 @@
       </div>
       <div style="padding: 32px;">
         <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 24px;">
-          Comparative analysis of three oxygen carrier materials at 120 kW<sub>th</sub> operating power 
+          Comparative analysis of three oxygen carrier materials at 120 kW<sub>th</sub> operating power
           and 1173 K, using identical reactor geometry and operating conditions. Only ore composition varies.
         </p>
-
         <div style="max-width: 600px;">
           <div class="efficiency-bar">
             <span class="label">Mn<sub>3</sub>O<sub>4</sub></span>
-            <div class="bar">
-              <div class="bar-fill" style="width: 95%; background: linear-gradient(90deg, var(--accent-green), var(--accent-green-dim));"></div>
-            </div>
+            <div class="bar"><div class="bar-fill" style="width: 95%; background: linear-gradient(90deg, var(--accent-green), var(--accent-green-dim));"></div></div>
             <span class="value" style="color: var(--accent-green);">~95%</span>
           </div>
           <div class="efficiency-bar">
             <span class="label">NiO/Al<sub>2</sub>O<sub>3</sub></span>
-            <div class="bar">
-              <div class="bar-fill" style="width: 84%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));"></div>
-            </div>
+            <div class="bar"><div class="bar-fill" style="width: 84%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));"></div></div>
             <span class="value" style="color: var(--accent-blue);">~84%</span>
           </div>
           <div class="efficiency-bar">
             <span class="label">Fe<sub>2</sub>O<sub>3</sub></span>
-            <div class="bar">
-              <div class="bar-fill" style="width: 71%; background: linear-gradient(90deg, var(--accent-amber), var(--accent-orange));"></div>
-            </div>
+            <div class="bar"><div class="bar-fill" style="width: 71%; background: linear-gradient(90deg, var(--accent-amber), var(--accent-orange));"></div></div>
             <span class="value" style="color: var(--accent-amber);">~71%</span>
           </div>
         </div>
-
         <div class="highlight-box" style="margin-top: 24px; margin-bottom: 0;">
           <p>
-            <strong>Key Finding:</strong> Manganese ore (Mn<sub>3</sub>O<sub>4</sub>) outperforms NiO with 
-            <strong>~95% combustion efficiency</strong> and &lt;1% unreacted methane at the FR outlet. 
-            Hematite shows lower reactivity (~15% methane unreacted) but offers advantages in 
-            <strong>cost, availability, and non-toxicity</strong>. Mixed Fe-Mn oxides present a viable 
+            <strong>Key Finding:</strong> Manganese ore (Mn<sub>3</sub>O<sub>4</sub>) outperforms NiO with
+            <strong>~95% combustion efficiency</strong> and &lt;1% unreacted methane at the FR outlet.
+            Hematite shows lower reactivity (~15% methane unreacted) but offers advantages in
+            <strong>cost, availability, and non-toxicity</strong>. Mixed Fe-Mn oxides present a viable
             compromise for reactivity and cost-effectiveness.
           </p>
         </div>
       </div>
     </div>
 
-    <!-- Machine Learning Section -->
     <div class="section-header fade-in" style="margin-top: 60px; margin-bottom: 32px;">
       <div class="section-label" style="color: var(--accent-purple);">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:6px;">
@@ -1544,8 +1676,8 @@
         <div class="insight-icon" style="background: rgba(192,132,252,0.1); color: var(--accent-purple);">🤖</div>
         <h4>8 ML Models Evaluated</h4>
         <p>
-          Random Forest (RF), Gradient Boosting (GBR), XGBoost, CatBoost, Extra Trees (ETR), 
-          AdaBoost, Support Vector Regression (SVR), and Ridge Regression trained on 964 samples 
+          Random Forest (RF), Gradient Boosting (GBR), XGBoost, CatBoost, Extra Trees (ETR),
+          AdaBoost, Support Vector Regression (SVR), and Ridge Regression trained on 964 samples
           from 93 research papers across 200&ndash;1200&deg;C.
         </p>
       </div>
@@ -1553,8 +1685,8 @@
         <div class="insight-icon" style="background: rgba(34,211,238,0.1); color: var(--accent-cyan);">📊</div>
         <h4>Top Performers</h4>
         <p>
-          <strong>GBR and CatBoost</strong> achieved the highest predictive accuracy with 
-          R<sup>2</sup> &gt; 0.80 and MAE = 0.015. CatBoost demonstrated superior robustness 
+          <strong>GBR and CatBoost</strong> achieved the highest predictive accuracy with
+          R<sup>2</sup> &gt; 0.80 and MAE = 0.015. CatBoost demonstrated superior robustness
           on unseen manganese ore data, closely matching experimental values.
         </p>
       </div>
@@ -1562,8 +1694,8 @@
         <div class="insight-icon" style="background: rgba(248,113,113,0.1); color: var(--accent-red);">🔥</div>
         <h4>Key Influencing Factors</h4>
         <p>
-          Feature importance analysis reveals <strong>operating temperature</strong> as the most 
-          critical parameter. For OC composition: <strong>Fe &gt; K &gt; Si &gt; Ti &gt; Mn &gt; Ca &gt; Al</strong>. 
+          Feature importance analysis reveals <strong>operating temperature</strong> as the most
+          critical parameter. For OC composition: <strong>Fe &gt; K &gt; Si &gt; Ti &gt; Mn &gt; Ca &gt; Al</strong>.
           Mixed Fe-Mn oxides with suitable inert supports show optimal gas yield and stability.
         </p>
       </div>
@@ -1572,6 +1704,7 @@
 </section>
 
 <div class="divider"></div>
+
 
 <!-- ═══════════════════════════════════════════════════════════════
      LIVE MONITOR
@@ -1675,6 +1808,132 @@
   </div>
 </section>
 
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     CO2 ANALYZER — ExplorIR-M 100% CO2 Sensor
+     ═══════════════════════════════════════════════════════════════ -->
+<section class="section co2-section" id="co2">
+  <div class="section-inner">
+    <div class="co2-hero fade-in">
+      <div class="co2-hero-inner">
+        <h2>🌬️ CO₂ Analyzer — ExplorIR-M Sensor</h2>
+        <p>Continuous CO₂ monitoring via Arduino Mega 2560 · Streaming mode (K 1) · Real-time parsing of Z-prefixed readings · JSON output format</p>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="export-bar fade-in stagger-1">
+      <div style="font-family:var(--font-mono);font-size:14px;font-weight:700;letter-spacing:1px;color:var(--accent-green);text-transform:uppercase;">
+        CO₂ Monitor
+      </div>
+      <div class="export-group">
+        <button class="ctrl-btn btn-connect" id="btn-co2-connect">Connect serial port</button>
+        <button class="ctrl-btn demo" id="btn-co2-demo">Demo mode</button>
+        <button class="ctrl-btn rec" id="btn-co2-rec">● Start recording</button>
+        <button class="ctrl-btn" id="btn-co2-clear">Clear</button>
+        <button class="ctrl-btn" id="btn-co2-pause" style="min-width:64px">Pause</button>
+      </div>
+    </div>
+
+    <!-- Data Export -->
+    <div class="export-bar fade-in stagger-1">
+      <div style="font-size:12px;color:var(--text-tertiary);">
+        Export session data
+      </div>
+      <div class="export-group">
+        <button class="export-btn primary" id="btn-export-csv">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Export CSV
+        </button>
+        <button class="export-btn primary" id="btn-export-graph">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          Save Graph Image
+        </button>
+        <button class="export-btn" id="btn-co2-sessions">Sessions</button>
+      </div>
+    </div>
+
+    <div class="status-line fade-in stagger-1">
+      <div class="status-dot" id="co2-status-dot"></div>
+      <span id="co2-status-text">Disconnected — click "Connect serial port" or use Demo mode</span>
+      <span id="co2-status-csv" style="margin-left:auto;font-size:11px;color:var(--accent-red);font-weight:600;"></span>
+    </div>
+
+    <!-- CO2 Gauges -->
+    <div class="co2-gauge-row fade-in stagger-2">
+      <div class="co2-gauge">
+        <div class="status-indicator" id="co2-dot-ppm"></div>
+        <div class="gauge-label">CO₂ (ppm)</div>
+        <div class="gauge-value" id="sv-co2-ppm" style="color:var(--accent-blue);">—</div>
+        <div class="gauge-unit">parts per million</div>
+      </div>
+      <div class="co2-gauge">
+        <div class="status-indicator" id="co2-dot-pct"></div>
+        <div class="gauge-label">CO₂ (%)</div>
+        <div class="gauge-value" id="sv-co2-pct" style="color:var(--accent-cyan);">—</div>
+        <div class="gauge-unit">volume percent</div>
+      </div>
+      <div class="co2-gauge">
+        <div class="status-indicator co2-status-trace" id="co2-dot-status"></div>
+        <div class="gauge-label">Status</div>
+        <div class="gauge-value" id="sv-co2-status" style="font-size:18px;color:var(--text-secondary);padding-top:8px;">—</div>
+        <div class="gauge-unit">combustion level</div>
+      </div>
+      <div class="co2-gauge">
+        <div class="gauge-label">Elapsed Time</div>
+        <div class="gauge-value" id="sv-co2-time" style="color:var(--accent-green);font-size:28px;">00:00</div>
+        <div class="gauge-unit">mm:ss · session timer</div>
+      </div>
+    </div>
+
+    <!-- Threshold Legend -->
+    <div class="threshold-legend fade-in stagger-2">
+      <div class="threshold-item"><div class="threshold-dot" style="background:var(--accent-blue)"></div> &lt;1% Trace</div>
+      <div class="threshold-item"><div class="threshold-dot" style="background:var(--accent-cyan)"></div> 1–5% Low</div>
+      <div class="threshold-item"><div class="threshold-dot" style="background:var(--accent-amber)"></div> 5–12% Moderate</div>
+      <div class="threshold-item"><div class="threshold-dot" style="background:var(--accent-green)"></div> 12–16% Normal</div>
+      <div class="threshold-item"><div class="threshold-dot" style="background:var(--accent-orange)"></div> 16–20% Rich</div>
+      <div class="threshold-item"><div class="threshold-dot" style="background:var(--accent-red)"></div> &gt;20% Very High</div>
+    </div>
+
+    <!-- CO2 Charts -->
+    <div class="chart-container fade-in stagger-3">
+      <h3>CO₂ Concentration Over Time</h3>
+      <p class="chart-sub">Real-time streaming from ExplorIR-M · Z-prefixed filtered readings · Percentage scale</p>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="chart-co2"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-container fade-in stagger-3">
+      <h3>CO₂ Parts Per Million (PPM)</h3>
+      <p class="chart-sub">Raw ppm values from sensor · Full-scale 0–1,000,000 ppm (0–100%)</p>
+      <div class="chart-wrap" style="height:220px">
+        <canvas id="chart-co2-ppm"></canvas>
+      </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="data-table-wrap fade-in stagger-4" style="margin-top: 24px;">
+      <table class="data-table" id="co2-data-table">
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Elapsed</th>
+            <th>CO₂ (ppm)</th>
+            <th>CO₂ (%)</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="co2-table-body">
+          <!-- Rows inserted dynamically -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
 <!-- ═══════════════════════════════════════════════════════════════
      SCROLL TO TOP
      ═══════════════════════════════════════════════════════════════ -->
@@ -1683,6 +1942,7 @@
     <path d="M12 19V5M5 12l7-7 7 7"/>
   </svg>
 </button>
+
 
 <!-- ═══════════════════════════════════════════════════════════════
      FOOTER
@@ -1696,7 +1956,8 @@
       </div>
       <p class="footer-desc">
         Advancing chemical looping combustion and gasification technology 
-        for sustainable carbon capture and clean hydrogen production.
+        for sustainable carbon capture, clean hydrogen production, and 
+        real-time CO₂ monitoring with ExplorIR-M sensor systems.
       </p>
     </div>
     <div class="footer-col">
@@ -1706,6 +1967,7 @@
       <a href="#results">Experimental Results</a>
       <a href="#research">CFD &amp; ML Research</a>
       <a href="#monitor">Live Monitor</a>
+      <a href="#co2">CO₂ Analyzer</a>
     </div>
     <div class="footer-col">
       <h4>Institution</h4>
@@ -2039,7 +2301,18 @@ document.getElementById('btn-rec').addEventListener('click', () => {
   }
 });
 
-// ── Scroll-to-top button ──
+// Auto-start demo on page load for presentation
+setTimeout(() => {
+  demoInterval = setInterval(demoStep, 500);
+  setStatus('Demo mode — simulated data', 'demo');
+  document.getElementById('btn-demo').textContent = 'Stop demo';
+  document.getElementById('btn-demo').classList.add('active');
+}, 1500);
+
+
+// ═══════════════════════════════════════════════════════════════
+//  SCROLL-TO-TOP BUTTON
+// ═══════════════════════════════════════════════════════════════
 const scrollTopBtn = document.getElementById('scrollTop');
 window.addEventListener('scroll', () => {
   if (window.scrollY > 500) {
@@ -2052,7 +2325,7 @@ scrollTopBtn.addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 });
 
-// ── Section counter on scroll-to-top ──
+// Section counter tooltip
 const allSections = document.querySelectorAll('section[id]');
 window.addEventListener('scroll', () => {
   let currentIdx = 0;
@@ -2062,13 +2335,282 @@ window.addEventListener('scroll', () => {
   scrollTopBtn.title = 'Back to top (' + (currentIdx + 1) + '/' + allSections.length + ' sections)';
 });
 
-// Auto-start demo on page load for presentation
+// ═══════════════════════════════════════════════════════════════
+//  CO2 ANALYZER — ExplorIR-M Sensor
+// ═══════════════════════════════════════════════════════════════
+const CO2_MAX_POINTS = 300;
+let co2Data = { ppm: [], pct: [], status: [], ts: [], epoch: [] };
+let co2Paused = false, co2Recording = false, co2DemoInterval = null;
+let co2SerialPort = null, co2SerialReader = null, co2SerialBuf = '';
+let co2SessionStart = null, co2ElapsedSec = 0;
+let co2CsvRows = [];
+
+// Thresholds matching Arduino code
+function getCo2Status(pct) {
+  if (pct < 1.0)  return { label: 'TRACE',              color: '#60a5fa', cls: 'co2-status-trace' };
+  if (pct < 5.0)  return { label: 'LOW COMBUSTION',     color: '#22d3ee', cls: 'co2-status-low' };
+  if (pct < 12.0) return { label: 'MODERATE COMBUSTION',color: '#fbbf24', cls: 'co2-status-moderate' };
+  if (pct < 16.0) return { label: 'NORMAL COMBUSTION',  color: '#4ade80', cls: 'co2-status-normal' };
+  if (pct < 20.0) return { label: 'RICH COMBUSTION',    color: '#fb923c', cls: 'co2-status-rich' };
+  return                { label: 'VERY HIGH',          color: '#f87171', cls: 'co2-status-veryhigh' };
+}
+
+// CO2 Charts
+const chartCo2Pct = makeLineChart('chart-co2', [
+  { label: 'CO₂ %', data: [], borderColor: '#4ade80', borderWidth: 2.5, pointRadius: 0, tension: 0.3,
+    fill: true, backgroundColor: 'rgba(74,222,128,0.06)' }
+], '%');
+const chartCo2Ppm = makeLineChart('chart-co2-ppm', [
+  { label: 'CO₂ ppm', data: [], borderColor: '#60a5fa', borderWidth: 2, pointRadius: 0, tension: 0.3,
+    fill: true, backgroundColor: 'rgba(96,165,250,0.06)' }
+], 'ppm');
+
+function pushCo2Row(ppm, pct) {
+  if (co2Paused) return;
+  const now = new Date();
+  const label = now.toLocaleTimeString();
+  const st = getCo2Status(pct);
+
+  if (!co2SessionStart) co2SessionStart = now;
+  co2ElapsedSec = Math.floor((now - co2SessionStart) / 1000);
+  const mm = String(Math.floor(co2ElapsedSec / 60)).padStart(2, '0');
+  const ss = String(co2ElapsedSec % 60).padStart(2, '0');
+
+  co2Data.ppm.push(ppm);
+  co2Data.pct.push(pct);
+  co2Data.status.push(st.label);
+  co2Data.ts.push(label);
+  co2Data.epoch.push(now.getTime());
+
+  if (co2Data.ts.length > CO2_MAX_POINTS) {
+    co2Data.ppm.shift(); co2Data.pct.shift(); co2Data.status.shift();
+    co2Data.ts.shift(); co2Data.epoch.shift();
+  }
+
+  // Update gauges
+  const elPpm = document.getElementById('sv-co2-ppm');
+  const elPct = document.getElementById('sv-co2-pct');
+  const elStatus = document.getElementById('sv-co2-status');
+  const elTime = document.getElementById('sv-co2-time');
+  if (elPpm) elPpm.textContent = ppm.toLocaleString();
+  if (elPct) elPct.textContent = pct.toFixed(2);
+  if (elStatus) { elStatus.textContent = st.label; elStatus.style.color = st.color; }
+  if (elTime) elTime.textContent = mm + ':' + ss;
+
+  // Status dots
+  const dotPpm = document.getElementById('co2-dot-ppm');
+  const dotPct = document.getElementById('co2-dot-pct');
+  const dotStatus = document.getElementById('co2-dot-status');
+  if (dotPpm) dotPpm.style.background = st.color;
+  if (dotPct) dotPct.style.background = st.color;
+  if (dotStatus) dotStatus.className = 'status-indicator ' + st.cls;
+
+  // Update charts
+  const L = co2Data.ts;
+  chartCo2Pct.data.labels = L;
+  chartCo2Pct.data.datasets[0].data = co2Data.pct;
+  chartCo2Pct.data.datasets[0].borderColor = st.color;
+  chartCo2Pct.update('none');
+
+  chartCo2Ppm.data.labels = L;
+  chartCo2Ppm.data.datasets[0].data = co2Data.ppm;
+  chartCo2Ppm.update('none');
+
+  // Update table (keep last 20 rows)
+  const tbody = document.getElementById('co2-table-body');
+  if (tbody) {
+    const row = document.createElement('tr');
+    row.innerHTML = '<td>' + label + '</td><td>' + mm + ':' + ss + '</td><td>' + ppm.toLocaleString() + '</td><td>' + pct.toFixed(2) + '</td><td style="color:' + st.color + ';font-weight:600;">' + st.label + '</td>';
+    tbody.insertBefore(row, tbody.firstChild);
+    while (tbody.children.length > 20) tbody.removeChild(tbody.lastChild);
+  }
+
+  // CSV recording
+  if (co2Recording) {
+    co2CsvRows.push([label, mm + ':' + ss, ppm, pct.toFixed(2), st.label].join(','));
+  }
+}
+
+// Parse ExplorIR-M streaming line: "Z 099870" -> filtered CO2 ppm
+function parseCo2Line(line) {
+  line = line.trim();
+  if (line.length < 3 || line.charAt(0) !== 'Z') return;
+  const ppm = parseInt(line.substring(2).trim(), 10);
+  if (isNaN(ppm)) return;
+  pushCo2Row(ppm, ppm / 10000.0);
+}
+
+// CO2 Demo mode
+let co2DemoState = { ppm: 50000, dir: 1 };
+function co2DemoStep() {
+  co2DemoState.ppm += (Math.random() - 0.45) * 3000 + co2DemoState.dir * 200;
+  co2DemoState.ppm = Math.max(5000, Math.min(220000, co2DemoState.ppm));
+  if (co2DemoState.ppm > 180000) co2DemoState.dir = -1;
+  if (co2DemoState.ppm < 10000) co2DemoState.dir = 1;
+  pushCo2Row(Math.round(co2DemoState.ppm), co2DemoState.ppm / 10000.0);
+}
+
+// Demo button
+document.getElementById('btn-co2-demo').addEventListener('click', () => {
+  if (co2DemoInterval) {
+    clearInterval(co2DemoInterval); co2DemoInterval = null;
+    co2SetStatus('Demo stopped', '');
+    document.getElementById('btn-co2-demo').textContent = 'Demo mode';
+    document.getElementById('btn-co2-demo').classList.remove('active');
+  } else {
+    if (co2SerialPort) co2DisconnectSerial();
+    co2DemoInterval = setInterval(co2DemoStep, 800);
+    co2SetStatus('CO₂ Demo mode — simulated data', 'demo');
+    document.getElementById('btn-co2-demo').textContent = 'Stop demo';
+    document.getElementById('btn-co2-demo').classList.add('active');
+  }
+});
+
+// Serial connection
+document.getElementById('btn-co2-connect').addEventListener('click', async () => {
+  if (co2SerialPort) { co2DisconnectSerial(); return; }
+  if (!('serial' in navigator)) { alert('Web Serial not supported. Use Chrome or Edge.'); return; }
+  try {
+    co2SerialPort = await navigator.serial.requestPort();
+    await co2SerialPort.open({ baudRate: 9600 });
+    const enc = new TextEncoder();
+    const writer = co2SerialPort.writable.getWriter();
+    await writer.write(enc.encode('K 1\r\n'));
+    writer.releaseLock();
+    co2SetStatus('CO₂ Connected — streaming mode K 1', 'on');
+    document.getElementById('btn-co2-connect').textContent = 'Disconnect';
+    document.getElementById('btn-co2-connect').classList.add('active');
+    co2ReadSerial();
+  } catch(e) { co2SerialPort = null; alert('Could not open serial port: ' + e.message); }
+});
+
+async function co2ReadSerial() {
+  const dec = new TextDecoder();
+  while (co2SerialPort && co2SerialPort.readable) {
+    co2SerialReader = co2SerialPort.readable.getReader();
+    try {
+      while (true) {
+        const { value, done } = await co2SerialReader.read();
+        if (done) break;
+        co2SerialBuf += dec.decode(value);
+        let nl;
+        while ((nl = co2SerialBuf.indexOf('\n')) >= 0) {
+          const line = co2SerialBuf.slice(0, nl).trim();
+          co2SerialBuf = co2SerialBuf.slice(nl + 1);
+          parseCo2Line(line);
+        }
+      }
+    } catch(e) { } finally { co2SerialReader.releaseLock(); }
+  }
+}
+
+async function co2DisconnectSerial() {
+  if (co2SerialReader) { try { await co2SerialReader.cancel(); } catch(_){} co2SerialReader = null; }
+  if (co2SerialPort) { try { await co2SerialPort.close(); } catch(_){} co2SerialPort = null; }
+  co2SetStatus('Disconnected', '');
+  document.getElementById('btn-co2-connect').textContent = 'Connect serial port';
+  document.getElementById('btn-co2-connect').classList.remove('active');
+}
+
+function co2SetStatus(msg, state) {
+  const statusTxt = document.getElementById('co2-status-text');
+  const dot = document.getElementById('co2-status-dot');
+  if (statusTxt) statusTxt.textContent = msg;
+  if (dot) dot.className = 'status-dot' + (state ? ' ' + state : '');
+}
+
+// Clear
+document.getElementById('btn-co2-clear').addEventListener('click', () => {
+  co2Data.ppm = []; co2Data.pct = []; co2Data.status = []; co2Data.ts = []; co2Data.epoch = [];
+  co2SessionStart = null; co2ElapsedSec = 0;
+  chartCo2Pct.data.labels = []; chartCo2Pct.data.datasets[0].data = []; chartCo2Pct.update('none');
+  chartCo2Ppm.data.labels = []; chartCo2Ppm.data.datasets[0].data = []; chartCo2Ppm.update('none');
+  document.getElementById('sv-co2-ppm').textContent = '—';
+  document.getElementById('sv-co2-pct').textContent = '—';
+  document.getElementById('sv-co2-status').textContent = '—';
+  document.getElementById('sv-co2-time').textContent = '00:00';
+  document.getElementById('co2-table-body').innerHTML = '';
+});
+
+// Pause
+document.getElementById('btn-co2-pause').addEventListener('click', () => {
+  co2Paused = !co2Paused;
+  document.getElementById('btn-co2-pause').textContent = co2Paused ? 'Resume' : 'Pause';
+  document.getElementById('btn-co2-pause').classList.toggle('active', co2Paused);
+});
+
+// Recording
+document.getElementById('btn-co2-rec').addEventListener('click', () => {
+  co2Recording = !co2Recording;
+  const btn = document.getElementById('btn-co2-rec');
+  if (co2Recording) {
+    btn.textContent = '■ Stop recording';
+    btn.classList.add('recording');
+    document.getElementById('co2-status-csv').textContent = '● REC';
+  } else {
+    btn.textContent = '● Start recording';
+    btn.classList.remove('recording');
+    document.getElementById('co2-status-csv').textContent = '';
+  }
+});
+
+// Export CSV
+document.getElementById('btn-export-csv').addEventListener('click', () => {
+  const rows = co2CsvRows.length > 0 ? co2CsvRows : co2Data.ts.map((t, i) => [
+    t,
+    String(Math.floor(i * 0.8 / 60)).padStart(2,'0') + ':' + String(Math.floor(i * 0.8 % 60)).padStart(2,'0'),
+    co2Data.ppm[i],
+    co2Data.pct[i].toFixed(2),
+    co2Data.status[i]
+  ].join(','));
+  const csv = 'Timestamp,Elapsed,CO2_ppm,CO2_percent,Status\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'co2_session_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+// Save Graph as Image
+document.getElementById('btn-export-graph').addEventListener('click', () => {
+  const canvasPct = document.getElementById('chart-co2');
+  const canvasPpm = document.getElementById('chart-co2-ppm');
+  if (!canvasPct || !canvasPpm) return;
+
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = canvasPct.width;
+  outCanvas.height = canvasPct.height + canvasPpm.height + 60;
+  const ctx = outCanvas.getContext('2d');
+
+  ctx.fillStyle = '#0f1410';
+  ctx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+
+  ctx.fillStyle = '#e8ede8';
+  ctx.font = 'bold 16px Inter, sans-serif';
+  ctx.fillText('CO₂ Analyzer Session — ' + new Date().toLocaleString(), 20, 24);
+  ctx.fillStyle = '#6a756a';
+  ctx.font = '12px Inter, sans-serif';
+  ctx.fillText('ExplorIR-M Sensor · CLC Research Laboratory', 20, 44);
+
+  ctx.drawImage(canvasPct, 0, 60);
+  ctx.drawImage(canvasPpm, 0, 60 + canvasPct.height + 10);
+
+  const url = outCanvas.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'co2_graph_' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.png';
+  a.click();
+});
+
+// Auto-start CO2 demo
 setTimeout(() => {
-  demoInterval = setInterval(demoStep, 500);
-  setStatus('Demo mode — simulated data', 'demo');
-  document.getElementById('btn-demo').textContent = 'Stop demo';
-  document.getElementById('btn-demo').classList.add('active');
-}, 1500);
+  co2DemoInterval = setInterval(co2DemoStep, 800);
+  co2SetStatus('CO₂ Demo mode — simulated data', 'demo');
+  document.getElementById('btn-co2-demo').textContent = 'Stop demo';
+  document.getElementById('btn-co2-demo').classList.add('active');
+}, 2000);
 </script>
 </body>
 </html>
