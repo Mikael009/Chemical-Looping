@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chemical Looping System — Temperature &amp; CO₂ Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+  @font-face {
+    font-family: 'Gotham';
+    src: local('Gotham Bold'), local('Gotham-Bold'), local('GothamBold');
+    font-weight: 700 900;
+    font-style: normal;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-primary:   #ffffff;
+    --bg-secondary: #f4f4f2;
+    --bg-tertiary:  #ededea;
+    --text-primary:   #1a1a18;
+    --text-secondary: #5f5e5a;
+    --text-tertiary:  #888780;
+    --border-light: rgba(0,0,0,0.10);
+    --border-mid:   rgba(0,0,0,0.18);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --green-dark:  #1a4a1e;
+    --green-mid:   #2d7a34;
+    --green-acc:   #4caf50;
+    --green-light: #e8f5e9;
+    --co2-acc:     #7c3aed;
+    --co2-mid:     #5b21b6;
+    --co2-light:   #ede9fe;
+    --font-sans: 'Gotham', 'Montserrat', 'Arial Narrow', Arial, sans-serif;
+    --font-cond: 'Gotham', 'Montserrat', 'Arial Narrow', Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary:    #1c1c1a;
+      --bg-secondary:  #252523;
+      --bg-tertiary:   #1a1f1a;
+      --text-primary:  #f0efe8;
+      --text-secondary:#b4b2a9;
+      --text-tertiary: #888780;
+      --border-light:  rgba(255,255,255,0.09);
+      --border-mid:    rgba(255,255,255,0.16);
+      --green-light: #0d1f0e;
+      --co2-light:   #1e1238;
+    }
+  }
+  body { font-family: var(--font-sans); font-weight: 700; background: var(--bg-tertiary); color: var(--text-primary); min-height: 100vh; padding: 0 0 40px; }
+  .shell { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; padding: 20px 20px 0; }
+
+  /* ═══ HERO ═══ */
+  .hero {
+    background: linear-gradient(135deg, var(--green-dark) 0%, #0f2e12 60%, #1c3d20 100%);
+    padding: 28px 32px 22px;
+    position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, rgba(76,175,80,0.04) 0px, rgba(76,175,80,0.04) 1px, transparent 1px, transparent 60px),
+                repeating-linear-gradient(0deg,  rgba(76,175,80,0.03) 0px, rgba(76,175,80,0.03) 1px, transparent 1px, transparent 60px);
+    pointer-events: none;
+  }
+  .hero-inner { max-width: 1100px; margin: 0 auto; position: relative; z-index: 1; display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .hero-eyebrow { font-family: var(--font-cond); font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--green-acc); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+  .hero-eyebrow::before { content: ''; display: inline-block; width: 24px; height: 2px; background: var(--green-acc); flex-shrink: 0; }
+  .hero-title { font-family: var(--font-cond); font-size: 48px; font-weight: 900; line-height: 0.92; letter-spacing: -1px; text-transform: uppercase; color: #ffffff; margin-bottom: 10px; }
+  .hero-title em { font-style: normal; color: var(--green-acc); }
+  .hero-sub { font-size: 12px; color: rgba(255,255,255,0.55); letter-spacing: 0.2px; font-weight: 400; }
+  .hero-badge-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .hero-badge { font-family: var(--font-cond); font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 5px 12px; border-radius: 3px; border: 1.5px solid rgba(76,175,80,0.4); color: rgba(255,255,255,0.7); }
+  .hero-badge.green { border-color: var(--green-acc); color: var(--green-acc); background: rgba(76,175,80,0.08); }
+  .hero-badge.sdg { display: flex; align-items: center; gap: 8px; padding: 7px 14px 7px 10px; border-radius: 4px; border: none; min-width: 130px; }
+  .sdg-num { font-family: var(--font-cond); font-size: 28px; font-weight: 900; line-height: 1; flex-shrink: 0; opacity: 0.95; }
+  .sdg-text { font-family: var(--font-sans); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.35; opacity: 0.95; }
+  .sdg7  { background: #FCC30B; color: #1a1a00; }
+  .sdg9  { background: #FD6925; color: #fff; }
+  .sdg13 { background: #3F7E44; color: #fff; }
+
+  /* ═══ TABS ═══ */
+  .tab-bar { display: flex; gap: 4px; background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-lg); padding: 6px; }
+  .tab-btn { font-family: var(--font-sans); font-size: 13px; font-weight: 700; padding: 8px 20px; border-radius: 6px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; transition: background 0.15s, color 0.15s; letter-spacing: 0.3px; }
+  .tab-btn.active { background: var(--green-acc); color: #fff; }
+  .tab-btn.active.co2-tab { background: var(--co2-acc); }
+  .tab-btn:hover:not(.active) { background: var(--bg-secondary); color: var(--text-primary); }
+  .tab-panel { display: none; flex-direction: column; gap: 16px; }
+  .tab-panel.active { display: flex; }
+
+  /* ═══ TOP BAR ═══ */
+  .top-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-lg); padding: 12px 16px; }
+  .controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .btn { font-family: var(--font-sans); font-size: 12px; padding: 6px 14px; border-radius: var(--radius-md); border: 0.5px solid var(--border-mid); background: transparent; color: var(--text-primary); cursor: pointer; transition: background 0.15s, opacity 0.15s; white-space: nowrap; font-weight: 500; }
+  .btn:hover { background: var(--bg-secondary); }
+  .btn:active { transform: scale(0.97); }
+  .btn.active { background: #E6F1FB; color: #185FA5; border-color: transparent; }
+  .btn-connect { background: var(--green-light); color: var(--green-dark); border-color: transparent; font-weight: 600; }
+  .btn-connect.co2 { background: var(--co2-light); color: var(--co2-mid); }
+  .btn-connect:hover, .btn-connect.co2:hover { opacity: 0.82; }
+  .btn-demo    { background: #FAEEDA; color: #854F0B; border-color: transparent; font-weight: 600; }
+  .btn-demo:hover { opacity: 0.82; }
+  .btn-rec     { background: #FCEBEB; color: #A32D2D; border-color: transparent; font-weight: 600; }
+  .btn-rec.recording { background: #A32D2D; color: #fff; }
+  .btn-save-graph { background: #E6F1FB; color: #185FA5; border-color: transparent; font-weight: 600; }
+  .btn-save-graph:hover { opacity: 0.82; }
+  @media (prefers-color-scheme: dark) {
+    .btn-connect { background: #1a3d1e; color: #a5d6a7; }
+    .btn-connect.co2 { background: #1e1238; color: #c4b5fd; }
+    .btn-demo    { background: #633806; color: #FAC775; }
+    .btn-rec     { background: #501313; color: #F7C1C1; }
+    .btn-rec.recording { background: #A32D2D; color: #fff; }
+    .btn-save-graph { background: #1a2d4a; color: #93c5fd; }
+  }
+
+  /* ═══ STATUS ═══ */
+  .status-bar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: var(--radius-md); border: 0.5px solid var(--border-light); background: var(--bg-primary); font-size: 12px; color: var(--text-secondary); flex-wrap: wrap; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-tertiary); flex-shrink: 0; }
+  .status-dot.connected { background: #1D9E75; animation: pulse 1.6s infinite; }
+  .status-dot.demo      { background: #EF9F27; animation: pulse 1.6s infinite; }
+  .status-dot.co2-connected { background: var(--co2-acc); animation: pulse 1.6s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.35} }
+  #status-csv, #status-csv-co2 { margin-left: auto; font-size: 11px; color: #A32D2D; font-weight: 600; }
+
+  /* ═══ REC PANEL ═══ */
+  .rec-panel { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-lg); padding: 16px 18px; display: none; flex-direction: column; gap: 14px; }
+  .rec-panel.visible { display: flex; }
+  .rec-panel-head { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .rec-panel-head h2 { font-size: 13px; font-weight: 600; }
+  .rec-meta { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 4px; }
+  .rec-meta-item { font-size: 12px; color: var(--text-secondary); }
+  .rec-meta-item strong { color: var(--text-primary); font-weight: 600; }
+  .auto-save-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; background: var(--bg-secondary); border-radius: var(--radius-md); }
+  .auto-save-row label { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .auto-save-row select { font-family: var(--font-sans); font-size: 12px; padding: 4px 8px; border-radius: var(--radius-md); border: 0.5px solid var(--border-mid); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; }
+  .auto-save-row .hint { font-size: 11px; color: var(--text-tertiary); }
+  .sess-section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-tertiary); }
+  .rec-sessions { display: flex; flex-direction: column; gap: 6px; }
+  .session-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: var(--radius-md); border: 0.5px solid var(--border-light); background: var(--bg-secondary); font-size: 12px; flex-wrap: wrap; }
+  .sess-name { font-weight: 500; flex: 1; min-width: 140px; }
+  .sess-meta { color: var(--text-secondary); font-size: 11px; }
+  .sess-btns { display: flex; gap: 6px; margin-left: auto; }
+  .sess-dl  { font-size: 11px; padding: 4px 10px; border-radius: var(--radius-md); border: 0.5px solid var(--border-mid); background: transparent; color: var(--text-primary); cursor: pointer; font-family: var(--font-sans); }
+  .sess-dl:hover { background: var(--bg-primary); }
+  .sess-del { font-size: 11px; padding: 4px 10px; border-radius: var(--radius-md); border: 0.5px solid #F7C1C1; background: transparent; color: #A32D2D; cursor: pointer; font-family: var(--font-sans); }
+  .sess-del:hover { background: #FCEBEB; }
+  .no-sessions { font-size: 12px; color: var(--text-tertiary); text-align: center; padding: 14px 0; }
+
+  /* ═══ STAT GRID ═══ */
+  .stat-grid { display: grid; grid-template-columns: repeat(6, minmax(0,1fr)); gap: 8px; }
+  @media (max-width:700px) { .stat-grid { grid-template-columns: repeat(3,minmax(0,1fr)); } }
+  .stat-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-md); padding: 10px 10px 8px; text-align: center; }
+  .stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.3; margin-bottom: 4px; }
+  .stat-val   { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; line-height: 1.1; color: var(--text-primary); }
+  .stat-unit  { font-size: 10px; color: var(--text-tertiary); margin-top: 1px; }
+
+  /* CO2 stat grid */
+  .co2-stat-grid { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+  @media (max-width:600px) { .co2-stat-grid { grid-template-columns: repeat(2,1fr); } }
+
+  /* CO2 status badge */
+  .co2-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .co2-badge.TRACE             { background: #e8f5e9; color: #1a6b2b; }
+  .co2-badge.LOW_COMBUSTION    { background: #fff3e0; color: #7a4b00; }
+  .co2-badge.MODERATE_COMBUSTION { background: #fff8e1; color: #6b5300; }
+  .co2-badge.NORMAL_COMBUSTION { background: #e3f2fd; color: #0c3a6e; }
+  .co2-badge.RICH_COMBUSTION   { background: #fce4ec; color: #880e4f; }
+  .co2-badge.VERY_HIGH         { background: #f3e5f5; color: #4a148c; }
+  @media (prefers-color-scheme: dark) {
+    .co2-badge.TRACE             { background: #0a2a0e; color: #86efac; }
+    .co2-badge.LOW_COMBUSTION    { background: #2a1a00; color: #fcd34d; }
+    .co2-badge.MODERATE_COMBUSTION { background: #221a00; color: #fde68a; }
+    .co2-badge.NORMAL_COMBUSTION { background: #0a1e36; color: #93c5fd; }
+    .co2-badge.RICH_COMBUSTION   { background: #2a0a18; color: #fda4af; }
+    .co2-badge.VERY_HIGH         { background: #1e0a2a; color: #d8b4fe; }
+  }
+
+  /* ═══ SECTION HEADER ═══ */
+  .section-header { font-family: var(--font-cond); font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: var(--green-mid); padding-left: 2px; display: flex; align-items: center; gap: 8px; }
+  .section-header::after { content: ''; flex: 1; height: 1px; background: var(--border-light); }
+  .section-header.co2 { color: var(--co2-mid); }
+
+  /* ═══ CHART CARDS ═══ */
+  .chart-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-lg); padding: 14px 16px; }
+  .chart-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 2px; flex-wrap: wrap; }
+  .chart-card-header h2  { font-size: 13px; font-weight: 600; }
+  .chart-card .sub { font-size: 11px; color: var(--text-secondary); margin-bottom: 10px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-secondary); }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .chart-wrap { position: relative; width: 100%; }
+
+  /* ═══ HEATMAP ═══ */
+  .heatmap-card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-lg); padding: 14px 16px; }
+  .heatmap-card h2 { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+  .heatmap-card .sub { font-size: 11px; color: var(--text-secondary); margin-bottom: 12px; }
+  .heatmap-outer { display: flex; gap: 10px; align-items: stretch; }
+  .heatmap-ylabel { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 10px; color: var(--text-tertiary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 14px; padding-bottom: 20px; }
+  .heatmap-col { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .heatmap-row-label { font-size: 10px; color: var(--text-secondary); font-weight: 500; margin-bottom: 2px; }
+  .heatmap-canvas-wrap { position: relative; width: 100%; }
+  .heatmap-canvas-wrap canvas { display: block; width: 100%; height: 60px; }
+  #hm-taxis-fr, #hm-taxis-ar { display: block; width: 100%; }
+  .hm-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .hm-controls label { font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+  .hm-controls select { font-family: var(--font-sans); font-size: 12px; padding: 3px 8px; border-radius: var(--radius-md); border: 0.5px solid var(--border-mid); background: var(--bg-secondary); color: var(--text-primary); }
+
+  /* ═══ COLORBAR ═══ */
+  .colorbar-container { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 52px; gap: 4px; }
+  .colorbar-title { font-size: 9px; color: var(--text-tertiary); text-align: center; line-height: 1.3; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+  .colorbar-inner { display: flex; flex-direction: row; align-items: stretch; gap: 3px; flex: 1; width: 100%; }
+  .colorbar-canvas-wrap { flex-shrink: 0; width: 16px; position: relative; }
+  .colorbar-canvas-wrap canvas { display: block; width: 16px; border-radius: 3px; border: 0.5px solid var(--border-mid); }
+  .colorbar-tick-labels { display: flex; flex-direction: column; justify-content: space-between; padding: 0; }
+  .colorbar-tick-label { font-size: 9px; color: var(--text-secondary); line-height: 1; white-space: nowrap; font-weight: 500; }
+
+  /* ═══ COMBINED CSV INFO ═══ */
+  .combined-info { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-lg); padding: 12px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .combined-info .info-text { font-size: 12px; color: var(--text-secondary); flex: 1; }
+  .combined-info .info-text strong { color: var(--text-primary); }
+  .combined-badge { font-size: 10px; padding: 3px 8px; border-radius: 3px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .combined-badge.temp { background: var(--green-light); color: var(--green-dark); }
+  .combined-badge.co2  { background: var(--co2-light); color: var(--co2-mid); }
+</style>
+</head>
+<body>
+
+<!-- ═══ HERO ═══ -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-eyebrow">UN Sustainable Development Goals · CLC System</div>
+      <div class="hero-title">Chemical<br><em>Looping</em><br>System</div>
+      <div class="hero-sub" style="font-size:13px;color:rgba(255,255,255,0.75);font-weight:700;margin-bottom:6px;">(Gasification and Combustion)</div>
+      <div class="hero-sub">6-channel MAX6675 thermocouple + ExplorIR-M CO₂ · Arduino Mega · Real-time monitoring</div>
+    </div>
+    <div class="hero-badge-row">
+      <div class="hero-badge sdg sdg7"><span class="sdg-num">7</span><span class="sdg-text">Affordable &amp;<br>Clean Energy</span></div>
+      <div class="hero-badge sdg sdg9"><span class="sdg-num">9</span><span class="sdg-text">Industry,<br>Innovation</span></div>
+      <div class="hero-badge sdg sdg13"><span class="sdg-num">13</span><span class="sdg-text">Climate<br>Action</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- ═══ TABS ═══ -->
+  <div class="tab-bar">
+    <button class="tab-btn active"          id="tab-btn-temp" onclick="switchTab('temp')">🌡 Temperature</button>
+    <button class="tab-btn co2-tab"         id="tab-btn-co2"  onclick="switchTab('co2')">💨 CO₂ Analyzer</button>
+    <button class="tab-btn"                 id="tab-btn-combined" onclick="switchTab('combined')">📊 Combined Export</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       TAB: TEMPERATURE
+  ══════════════════════════════════════════════ -->
+  <div class="tab-panel active" id="panel-temp">
+
+    <div class="top-bar">
+      <div style="font-family:var(--font-cond);font-size:14px;font-weight:800;letter-spacing:1px;color:var(--green-mid);text-transform:uppercase;">Temperature Monitor</div>
+      <div class="controls">
+        <button class="btn btn-connect" id="btn-connect">Connect serial port</button>
+        <button class="btn btn-demo"    id="btn-demo">Demo mode</button>
+        <button class="btn btn-rec"     id="btn-rec">&#9679; Start recording</button>
+        <button class="btn"             id="btn-sessions">Sessions</button>
+        <button class="btn btn-save-graph" id="btn-save-graph-temp">Save graphs</button>
+        <button class="btn"             id="btn-clear">Clear</button>
+        <button class="btn"             id="btn-pause" style="min-width:64px">Pause</button>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-text">Disconnected — click "Connect serial port" (Chrome/Edge) or use Demo mode</span>
+      <span id="status-csv"></span>
+    </div>
+
+    <!-- REC PANEL -->
+    <div class="rec-panel" id="rec-panel">
+      <div class="rec-panel-head">
+        <div>
+          <h2>Temperature Data Recording</h2>
+          <div class="rec-meta">
+            <span class="rec-meta-item">Rows: <strong id="rm-rows">0</strong></span>
+            <span class="rec-meta-item">Started: <strong id="rm-start">—</strong></span>
+            <span class="rec-meta-item">Duration: <strong id="rm-dur">—</strong></span>
+            <span class="rec-meta-item">File: <strong id="rm-file">—</strong></span>
+          </div>
+        </div>
+        <button class="sess-dl" id="btn-dl-now">Download now</button>
+      </div>
+      <div class="auto-save-row">
+        <label><input type="checkbox" id="chk-autosave" checked> Auto-save every</label>
+        <select id="sel-interval">
+          <option value="10">10 s</option>
+          <option value="30" selected>30 s</option>
+          <option value="60">60 s</option>
+          <option value="300">5 min</option>
+        </select>
+        <span class="hint">Uses File System Access API (Chrome/Edge). Also saves to browser storage.</span>
+      </div>
+      <div>
+        <div class="sess-section-title" style="margin-bottom:8px">Saved sessions (browser storage)</div>
+        <div class="rec-sessions" id="session-list"></div>
+      </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label" style="color:#993C1D">T6<br>FR Bed Base</div><div class="stat-val" id="sv-t6">—</div><div class="stat-unit">°C</div></div>
+      <div class="stat-card"><div class="stat-label" style="color:#993C1D">T2<br>FR Bed Top</div><div class="stat-val" id="sv-t2">—</div><div class="stat-unit">°C</div></div>
+      <div class="stat-card"><div class="stat-label" style="color:#854F0B">T4<br>FR Out</div><div class="stat-val" id="sv-t4">—</div><div class="stat-unit">°C</div></div>
+      <div class="stat-card"><div class="stat-label" style="color:#185FA5">T5<br>AR Bed Base</div><div class="stat-val" id="sv-t5">—</div><div class="stat-unit">°C</div></div>
+      <div class="stat-card"><div class="stat-label" style="color:#185FA5">T3<br>AR Bed Top</div><div class="stat-val" id="sv-t3">—</div><div class="stat-unit">°C</div></div>
+      <div class="stat-card"><div class="stat-label" style="color:#3B6D11">T1<br>AR Out</div><div class="stat-val" id="sv-t1">—</div><div class="stat-unit">°C</div></div>
+    </div>
+
+    <!-- FUEL REACTOR -->
+    <div class="section-header">Fuel Reactor</div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div><h2>Fuel reactor temperature profile</h2><p class="sub">T6 (bed base) · T2 (bed top) · T4 (FR out)</p></div>
+        <button class="btn btn-save-graph" onclick="saveChartImage('chart-fr','FR_Temperature')">⬇ Save PNG</button>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-swatch" style="background:#D85A30"></span>T6 — FR Bed Base</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#F09595"></span>T2 — FR Bed Top</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#EF9F27"></span>T4 — FR Out</span>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-fr"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div><h2>ΔT — fuel reactor (bed top − bed base)</h2><p class="sub">T2 − T6 indicates heat release and reaction intensity</p></div>
+        <button class="btn btn-save-graph" onclick="saveChartImage('chart-dT-fr','FR_DeltaT')">⬇ Save PNG</button>
+      </div>
+      <div class="legend"><span class="legend-item"><span class="legend-swatch" style="background:#D85A30"></span>ΔT_FR = T2 − T6</span></div>
+      <div class="chart-wrap" style="height:150px"><canvas id="chart-dT-fr"></canvas></div>
+    </div>
+
+    <!-- AIR REACTOR -->
+    <div class="section-header">Air Reactor &amp; Riser</div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div><h2>Air reactor temperature profile</h2><p class="sub">T5 (bed base) · T3 (bed top) · T1 (AR out)</p></div>
+        <button class="btn btn-save-graph" onclick="saveChartImage('chart-ar','AR_Temperature')">⬇ Save PNG</button>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-swatch" style="background:#378ADD"></span>T5 — AR Bed Base</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#85B7EB;border:1px dashed #378ADD"></span>T3 — AR Bed Top</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#1D9E75"></span>T1 — AR Out</span>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-ar"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div><h2>ΔT — air reactor (bed top − bed base)</h2><p class="sub">ΔT_AR = T3 − T5 · ΔT_AR_out = T1 − T5</p></div>
+        <button class="btn btn-save-graph" onclick="saveChartImage('chart-dT-ar','AR_DeltaT')">⬇ Save PNG</button>
+      </div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-swatch" style="background:#378ADD"></span>ΔT_AR = T3 − T5</span>
+        <span class="legend-item"><span class="legend-swatch" style="background:#1D9E75;border:1px dashed #1D9E75"></span>ΔT_AR_out = T1 − T5</span>
+      </div>
+      <div class="chart-wrap" style="height:150px"><canvas id="chart-dT-ar"></canvas></div>
+    </div>
+
+    <!-- HEATMAPS -->
+    <div class="section-header">Temperature Heatmap (Spectrogram View)</div>
+    <div class="heatmap-card">
+      <div class="chart-card-header">
+        <div><h2>Fuel reactor — temperature heatmap</h2><p class="sub">Each column = one sample. Colour encodes temperature intensity. T6 top row, T2 middle, T4 bottom.</p></div>
+        <button class="btn btn-save-graph" onclick="saveHeatmapImage('hm-t4','hm-t5','hm-t6','FR_Heatmap')">⬇ Save PNG</button>
+      </div>
+      <div class="hm-controls"><label>Window: <select id="hm-window-fr"><option value="120">120 samples</option><option value="240">240 samples</option><option value="480">480 samples</option></select></label></div>
+      <div class="heatmap-outer">
+        <div class="heatmap-ylabel">Temperature (°C)</div>
+        <div class="heatmap-col">
+          <div class="heatmap-row-label" style="color:#D85A30">T6 — Fuel Reactor Bed Base</div>
+          <div class="heatmap-canvas-wrap"><canvas id="hm-t4" height="60"></canvas></div>
+          <div class="heatmap-row-label" style="color:#F09595;margin-top:6px">T2 — Fuel Reactor Bed Top</div>
+          <div class="heatmap-canvas-wrap"><canvas id="hm-t5" height="60"></canvas></div>
+          <div class="heatmap-row-label" style="color:#EF9F27;margin-top:6px">T4 — Fuel Reactor Out</div>
+          <div class="heatmap-canvas-wrap"><canvas id="hm-t6" height="60"></canvas></div>
+          <div class="heatmap-canvas-wrap" style="margin-top:2px"><canvas id="hm-taxis-fr" height="28"></canvas></div>
+        </div>
+        <div class="colorbar-container" id="colorbar-fr-container">
+          <div class="colorbar-title">°C scale</div>
+          <div class="colorbar-inner">
+            <div class="colorbar-canvas-wrap"><canvas id="colorbar-fr" width="16" height="200"></canvas></div>
+            <div class="colorbar-tick-labels" id="colorbar-fr-labels"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="heatmap-card">
+      <div class="chart-card-header">
+        <div><h2>Air reactor &amp; riser — temperature heatmap</h2><p class="sub">Each column = one sample. Colour encodes temperature intensity. T5 top, T3 middle, T1 bottom.</p></div>
+        <button class="btn btn-save-graph" onclick="saveHeatmapImage('hm-t1','hm-t2','hm-t3','AR_Heatmap')">⬇ Save PNG</button>
+      </div>
+      <div class="hm-controls"><label>Window: <select id="hm-window-ar"><option value="120">120 samples</option><option value="240">240 samples</option><option value="480">480 samples</option></select></label></div>
+      <div class="heatmap-outer">
+        <div class="heatmap-ylabel">Temperature (°C)</div>
+        <div class="heatmap-col">
+          <div class="heatmap-row-label" style="color:#378ADD">T5 — Air Reactor Bed Base</div>
+          <div class="heatmap-canvas-wrap"><canvas id="hm-t1" height="60"></canvas></div>
+          <div class="heatmap-row-label" style="color:#85B7EB;margin-top:6px">T3 — Air Reactor Bed Top</div>
+          <div class="heatmap-canvas-wrap"><canvas id="hm-t2" height="60"></canvas></div>
+          <div class="heatmap-row-label" style="color:#1D9E75;margin-top:6px">T1 — Air Reactor Out</div>
+          <div class="heatmap-canvas-wrap"><canvas id="hm-t3" height="60"></canvas></div>
+          <div class="heatmap-canvas-wrap" style="margin-top:2px"><canvas id="hm-taxis-ar" height="28"></canvas></div>
+        </div>
+        <div class="colorbar-container" id="colorbar-ar-container">
+          <div class="colorbar-title">°C scale</div>
+          <div class="colorbar-inner">
+            <div class="colorbar-canvas-wrap"><canvas id="colorbar-ar" width="16" height="200"></canvas></div>
+            <div class="colorbar-tick-labels" id="colorbar-ar-labels"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /panel-temp -->
+
+
+  <!-- ══════════════════════════════════════════════
+       TAB: CO2 MONITOR
+  ══════════════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-co2">
+
+    <div class="top-bar">
+      <div style="font-family:var(--font-cond);font-size:14px;font-weight:800;letter-spacing:1px;color:var(--co2-mid);text-transform:uppercase;">CO₂ Analyzer · ExplorIR-M</div>
+      <div class="controls">
+        <button class="btn btn-connect co2" id="btn-co2-connect">Connect CO₂ port</button>
+        <button class="btn btn-demo"        id="btn-co2-demo">CO₂ Demo</button>
+        <button class="btn btn-rec"         id="btn-co2-rec">&#9679; Start recording</button>
+        <button class="btn"                 id="btn-co2-sessions">Sessions</button>
+        <button class="btn btn-save-graph"  id="btn-save-graph-co2" onclick="saveCo2Graphs()">Save graphs</button>
+        <button class="btn"                 id="btn-co2-clear">Clear</button>
+        <button class="btn"                 id="btn-co2-pause" style="min-width:64px">Pause</button>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-dot" id="co2-status-dot"></div>
+      <span id="co2-status-text">Disconnected — connect ExplorIR-M on Serial1 (115200 baud) or use CO₂ Demo</span>
+      <span id="status-csv-co2"></span>
+    </div>
+
+    <!-- CO2 REC PANEL -->
+    <div class="rec-panel" id="co2-rec-panel">
+      <div class="rec-panel-head">
+        <div>
+          <h2>CO₂ Data Recording</h2>
+          <div class="rec-meta">
+            <span class="rec-meta-item">Rows: <strong id="co2-rm-rows">0</strong></span>
+            <span class="rec-meta-item">Started: <strong id="co2-rm-start">—</strong></span>
+            <span class="rec-meta-item">Duration: <strong id="co2-rm-dur">—</strong></span>
+            <span class="rec-meta-item">File: <strong id="co2-rm-file">—</strong></span>
+          </div>
+        </div>
+        <button class="sess-dl" id="btn-co2-dl-now">Download now</button>
+      </div>
+      <div class="auto-save-row">
+        <label><input type="checkbox" id="chk-co2-autosave" checked> Auto-save every</label>
+        <select id="sel-co2-interval">
+          <option value="10">10 s</option>
+          <option value="30" selected>30 s</option>
+          <option value="60">60 s</option>
+          <option value="300">5 min</option>
+        </select>
+        <span class="hint">Uses File System Access API (Chrome/Edge). Also saves to browser storage.</span>
+      </div>
+      <div>
+        <div class="sess-section-title" style="margin-bottom:8px">Saved CO₂ sessions</div>
+        <div class="rec-sessions" id="co2-session-list"></div>
+      </div>
+    </div>
+
+    <!-- CO2 STAT CARDS -->
+    <div class="co2-stat-grid">
+      <div class="stat-card">
+        <div class="stat-label" style="color:var(--co2-mid)">CO₂ (PPM)</div>
+        <div class="stat-val" id="co2-sv-ppm">—</div>
+        <div class="stat-unit">ppm</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label" style="color:var(--co2-mid)">CO₂ (%)</div>
+        <div class="stat-val" id="co2-sv-pct">—</div>
+        <div class="stat-unit">%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label" style="color:var(--co2-mid)">Status</div>
+        <div style="font-size:13px;font-weight:700;padding:10px 0 2px" id="co2-sv-status">—</div>
+        <div class="stat-unit">combustion zone</div>
+      </div>
+    </div>
+
+    <!-- CO2 LINE CHART -->
+    <div class="section-header co2">CO₂ Concentration</div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div><h2>CO₂ concentration over time</h2><p class="sub">Filtered reading (Z command) — ExplorIR-M 100% CO₂ sensor. ~2 samples/sec.</p></div>
+        <button class="btn btn-save-graph" onclick="saveChartImage('chart-co2-ppm','CO2_PPM')">⬇ Save PNG</button>
+      </div>
+      <div class="legend"><span class="legend-item"><span class="legend-swatch" style="background:var(--co2-acc)"></span>CO₂ (ppm)</span></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-co2-ppm"></canvas></div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div><h2>CO₂ percentage over time</h2><p class="sub">ppm ÷ 10,000. Combustion thresholds shown as reference lines.</p></div>
+        <button class="btn btn-save-graph" onclick="saveChartImage('chart-co2-pct','CO2_Percent')">⬇ Save PNG</button>
+      </div>
+      <div class="legend"><span class="legend-item"><span class="legend-swatch" style="background:#a78bfa"></span>CO₂ (%)</span></div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chart-co2-pct"></canvas></div>
+    </div>
+
+    <!-- CO2 COMBUSTION ZONE KEY -->
+    <div class="section-header co2">Combustion Zone Reference</div>
+    <div class="chart-card">
+      <h2 style="font-size:13px;font-weight:600;margin-bottom:10px">Combustion zone thresholds</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;">
+        <div style="padding:8px 12px;border-radius:6px;border:0.5px solid var(--border-light)"><div class="co2-badge TRACE" style="margin-bottom:4px">TRACE</div><div style="font-size:11px;color:var(--text-secondary);margin-top:4px">&lt; 1% CO₂</div></div>
+        <div style="padding:8px 12px;border-radius:6px;border:0.5px solid var(--border-light)"><div class="co2-badge LOW_COMBUSTION" style="margin-bottom:4px">LOW COMBUSTION</div><div style="font-size:11px;color:var(--text-secondary);margin-top:4px">1% – 5%</div></div>
+        <div style="padding:8px 12px;border-radius:6px;border:0.5px solid var(--border-light)"><div class="co2-badge MODERATE_COMBUSTION" style="margin-bottom:4px">MODERATE</div><div style="font-size:11px;color:var(--text-secondary);margin-top:4px">5% – 12%</div></div>
+        <div style="padding:8px 12px;border-radius:6px;border:0.5px solid var(--border-light)"><div class="co2-badge NORMAL_COMBUSTION" style="margin-bottom:4px">NORMAL</div><div style="font-size:11px;color:var(--text-secondary);margin-top:4px">12% – 16%</div></div>
+        <div style="padding:8px 12px;border-radius:6px;border:0.5px solid var(--border-light)"><div class="co2-badge RICH_COMBUSTION" style="margin-bottom:4px">RICH</div><div style="font-size:11px;color:var(--text-secondary);margin-top:4px">16% – 20%</div></div>
+        <div style="padding:8px 12px;border-radius:6px;border:0.5px solid var(--border-light)"><div class="co2-badge VERY_HIGH" style="margin-bottom:4px">VERY HIGH</div><div style="font-size:11px;color:var(--text-secondary);margin-top:4px">&gt; 20%</div></div>
+      </div>
+    </div>
+
+  </div><!-- /panel-co2 -->
+
+
+  <!-- ══════════════════════════════════════════════
+       TAB: COMBINED EXPORT
+  ══════════════════════════════════════════════ -->
+  <div class="tab-panel" id="panel-combined">
+
+    <div class="combined-info">
+      <div style="font-size:22px">📊</div>
+      <div class="info-text">
+        <strong>Combined CSV Export</strong> — Download a single CSV containing both temperature (T1–T6) and CO₂ readings, time-aligned by timestamp. Only rows where both sensors have data within the same second are merged; others are included with blanks in the missing columns.
+      </div>
+      <span class="combined-badge temp">6× Temp</span>
+      <span class="combined-badge co2">CO₂ ppm + %</span>
+    </div>
+
+    <div class="chart-card">
+      <h2 style="font-size:13px;font-weight:600;margin-bottom:12px">Export options</h2>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="auto-save-row" style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px 14px;">
+          <div style="flex:1;">
+            <div style="font-size:12px;font-weight:600;margin-bottom:4px;">🌡 Temperature CSV only</div>
+            <div style="font-size:11px;color:var(--text-secondary);">T1–T6, derived ΔT channels, timestamps</div>
+          </div>
+          <button class="btn btn-save-graph" id="btn-dl-temp-only">Download Temp CSV</button>
+        </div>
+        <div class="auto-save-row" style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px 14px;">
+          <div style="flex:1;">
+            <div style="font-size:12px;font-weight:600;margin-bottom:4px;">💨 CO₂ CSV only</div>
+            <div style="font-size:11px;color:var(--text-secondary);">CO₂ ppm, %, status, timestamps</div>
+          </div>
+          <button class="btn btn-save-graph" id="btn-dl-co2-only" style="background:var(--co2-light);color:var(--co2-mid);">Download CO₂ CSV</button>
+        </div>
+        <div class="auto-save-row" style="background:var(--green-light);border-radius:var(--radius-md);padding:12px 14px;">
+          <div style="flex:1;">
+            <div style="font-size:12px;font-weight:600;margin-bottom:4px;">🔗 Combined CSV (Temperature + CO₂)</div>
+            <div style="font-size:11px;color:var(--text-secondary);">All channels merged into one file with shared timestamps</div>
+          </div>
+          <button class="btn" style="background:var(--green-acc);color:#fff;border:none;font-weight:700;" id="btn-dl-combined">Download Combined CSV</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h2 style="font-size:13px;font-weight:600;margin-bottom:12px">Save all graphs as PNG</h2>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="auto-save-row" style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px 14px;">
+          <div style="flex:1;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">🌡 All temperature charts</div><div style="font-size:11px;color:var(--text-secondary);">FR profile, AR profile, ΔT_FR, ΔT_AR</div></div>
+          <button class="btn btn-save-graph" id="btn-save-all-temp">Save all temp PNGs</button>
+        </div>
+        <div class="auto-save-row" style="background:var(--bg-secondary);border-radius:var(--radius-md);padding:12px 14px;">
+          <div style="flex:1;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">💨 All CO₂ charts</div><div style="font-size:11px;color:var(--text-secondary);">CO₂ ppm, CO₂ %</div></div>
+          <button class="btn btn-save-graph" id="btn-save-all-co2" style="background:var(--co2-light);color:var(--co2-mid);">Save all CO₂ PNGs</button>
+        </div>
+        <div class="auto-save-row" style="background:var(--green-light);border-radius:var(--radius-md);padding:12px 14px;">
+          <div style="flex:1;"><div style="font-size:12px;font-weight:600;margin-bottom:4px;">📦 Save everything (temp + CO₂)</div><div style="font-size:11px;color:var(--text-secondary);">All 6 charts downloaded at once</div></div>
+          <button class="btn" style="background:var(--green-acc);color:#fff;border:none;font-weight:700;" id="btn-save-all-graphs">Save all PNGs</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card" id="combined-sessions-card">
+      <h2 style="font-size:13px;font-weight:600;margin-bottom:12px">All saved sessions</h2>
+      <div class="sess-section-title" style="margin-bottom:6px">Temperature sessions</div>
+      <div class="rec-sessions" id="combined-temp-sessions" style="margin-bottom:14px"></div>
+      <div class="sess-section-title" style="margin-bottom:6px">CO₂ sessions</div>
+      <div class="rec-sessions" id="combined-co2-sessions"></div>
+    </div>
+
+  </div><!-- /panel-combined -->
+
+</div><!-- /shell -->
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   CLC Combined Monitor — Temperature + CO₂
+   ══════════════════════════════════════════════════════════════ */
+
+// ── TAB SWITCHING ──────────────────────────────────────────────
+function switchTab(name) {
+  ['temp','co2','combined'].forEach(t => {
+    document.getElementById('panel-'+t).classList.toggle('active', t===name);
+    document.getElementById('tab-btn-'+t).classList.toggle('active', t===name);
+  });
+  if (name==='combined') renderCombinedSessions();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  TEMPERATURE MONITOR
+// ════════════════════════════════════════════════════════════════
+const MAX_POINTS = 600;
+const CHANNELS   = ['t1','t2','t3','t4','t5','t6'];
+let data = { t1:[],t2:[],t3:[],t4:[],t5:[],t6:[],ts:[],epoch:[] };
+let paused=false, recording=false, demoInterval=null;
+let serialPort=null, serialReader=null, serialBuf='';
+let recRows=[], recStart=null, recDur=0, recTimer=null;
+let autoSaveTimer=null, fileHandle=null;
+let sessions=JSON.parse(localStorage.getItem('clc_sessions')||'[]');
+let hmWindowFR=120, hmWindowAR=120;
+const HM_TMIN_FR=100, HM_TMAX_FR=1000;
+const HM_TMIN_AR=100, HM_TMAX_AR=1000;
+
+// DOM
+const dot       = document.getElementById('status-dot');
+const statusTxt = document.getElementById('status-text');
+const statusCsv = document.getElementById('status-csv');
+const recPanel  = document.getElementById('rec-panel');
+const sessList  = document.getElementById('session-list');
+
+Chart.defaults.font.family = "'Gotham','Montserrat','Arial Narrow',Arial,sans-serif";
+Chart.defaults.font.size   = 10;
+Chart.defaults.color       = '#888780';
+
+function makeLineChart(id, datasets, yLabel='°C') {
+  const ctx = document.getElementById(id).getContext('2d');
+  return new Chart(ctx, {
+    type: 'line',
+    data: { labels:[], datasets },
+    options: {
+      responsive:true, maintainAspectRatio:false, animation:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{
+        label: c => ` ${c.dataset.label}: ${c.parsed.y!==null ? c.parsed.y.toFixed(1) : '—'}${yLabel}`
+      }}},
+      scales:{
+        x:{ ticks:{ maxTicksLimit:8, maxRotation:0 }, grid:{ color:'rgba(0,0,0,0.06)' }},
+        y:{ title:{ display:true, text:yLabel }, ticks:{ maxTicksLimit:6 }, grid:{ color:'rgba(0,0,0,0.06)' }}
+      }
+    }
+  });
+}
+
+const chartFR    = makeLineChart('chart-fr',[
+  { label:'T6 FR Bed Base', data:[], borderColor:'#D85A30', borderWidth:1.5, pointRadius:0, tension:0.3 },
+  { label:'T2 FR Bed Top',  data:[], borderColor:'#F09595', borderWidth:1.5, pointRadius:0, tension:0.3 },
+  { label:'T4 FR Out',      data:[], borderColor:'#EF9F27', borderWidth:1.5, pointRadius:0, tension:0.3 },
+]);
+const chartAR    = makeLineChart('chart-ar',[
+  { label:'T5 AR Bed Base', data:[], borderColor:'#378ADD', borderWidth:1.5, pointRadius:0, tension:0.3 },
+  { label:'T3 AR Bed Top',  data:[], borderColor:'#85B7EB', borderWidth:1.5, borderDash:[4,3], pointRadius:0, tension:0.3 },
+  { label:'T1 AR Out',      data:[], borderColor:'#1D9E75', borderWidth:1.5, pointRadius:0, tension:0.3 },
+]);
+const chartDTfr  = makeLineChart('chart-dT-fr',[
+  { label:'ΔT_FR = T2−T6', data:[], borderColor:'#D85A30', borderWidth:1.5, pointRadius:0, tension:0.3,
+    fill:true, backgroundColor:'rgba(216,90,48,0.08)' },
+],'°C');
+const chartDTar  = makeLineChart('chart-dT-ar',[
+  { label:'ΔT_AR = T3−T5',    data:[], borderColor:'#378ADD', borderWidth:1.5, pointRadius:0, tension:0.3,
+    fill:true, backgroundColor:'rgba(55,138,221,0.08)' },
+  { label:'ΔT_AR_out = T1−T5', data:[], borderColor:'#1D9E75', borderWidth:1.5, borderDash:[4,3], pointRadius:0, tension:0.3 },
+],'°C');
+
+// ── heatmap colour ──────────────────────────────────────────────
+function tempToColor(t,tMin,tMax) {
+  const f = Math.max(0,Math.min(1,(t-tMin)/(tMax-tMin)));
+  const stops = [[0,[10,10,10]],[0.33,[180,30,20]],[0.66,[230,140,0]],[0.85,[255,220,50]],[1.0,[255,255,230]]];
+  for(let i=1;i<stops.length;i++){
+    if(f<=stops[i][0]){
+      const t0=stops[i-1][0],t1=stops[i][0],c0=stops[i-1][1],c1=stops[i][1];
+      const mix=(f-t0)/(t1-t0);
+      return [Math.round(c0[0]+mix*(c1[0]-c0[0])),Math.round(c0[1]+mix*(c1[1]-c0[1])),Math.round(c0[2]+mix*(c1[2]-c0[2]))];
+    }
+  }
+  return [255,255,230];
+}
+function drawHeatmapRow(canvasId,values,tMin,tMax){
+  const canvas=document.getElementById(canvasId); if(!canvas)return;
+  const W=canvas.offsetWidth||canvas.parentElement.offsetWidth||600;
+  canvas.width=W; canvas.height=60;
+  const ctx=canvas.getContext('2d');
+  if(!values.length){ctx.fillStyle='#111';ctx.fillRect(0,0,W,60);return;}
+  const cellW=W/values.length;
+  values.forEach((v,i)=>{
+    const [r,g,b]=isNaN(v)?[30,30,30]:tempToColor(v,tMin,tMax);
+    ctx.fillStyle=`rgb(${r},${g},${b})`;
+    ctx.fillRect(Math.floor(i*cellW),0,Math.ceil(cellW)+1,60);
+  });
+}
+function drawColorbar(canvasId,labelsId,tMin,tMax){
+  const canvas=document.getElementById(canvasId); if(!canvas)return;
+  const H=200; canvas.height=H; canvas.width=16;
+  const ctx=canvas.getContext('2d');
+  for(let y=0;y<H;y++){
+    const f=1-(y/(H-1)); const t=tMin+f*(tMax-tMin);
+    const [r,g,b]=tempToColor(t,tMin,tMax);
+    ctx.fillStyle=`rgb(${r},${g},${b})`; ctx.fillRect(0,y,16,1);
+  }
+  const labelsEl=document.getElementById(labelsId); if(!labelsEl)return;
+  labelsEl.innerHTML=''; labelsEl.style.height=H+'px';
+  for(let i=0;i<=6;i++){
+    const lbl=document.createElement('div'); lbl.className='colorbar-tick-label';
+    lbl.textContent=Math.round(tMax-(i/6)*(tMax-tMin))+'°'; labelsEl.appendChild(lbl);
+  }
+}
+function drawTimeAxis(canvasId,epochSlice){
+  const canvas=document.getElementById(canvasId); if(!canvas)return;
+  const W=canvas.offsetWidth||canvas.parentElement.offsetWidth||600;
+  canvas.width=W; canvas.height=28;
+  const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,W,28);
+  const isDark=window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const tickColor=isDark?'rgba(255,255,255,0.45)':'rgba(0,0,0,0.45)';
+  const labelColor=isDark?'rgba(255,255,255,0.6)':'rgba(0,0,0,0.55)';
+  const n=epochSlice.length;
+  if(n<2){ctx.fillStyle=labelColor;ctx.font='bold 9px Gotham,Montserrat,"Arial Narrow",Arial,sans-serif';ctx.textAlign='center';ctx.fillText('← time →',W/2,18);return;}
+  const tStart=epochSlice[0],tEnd=epochSlice[n-1],spanMs=tEnd-tStart;
+  if(spanMs<=0)return;
+  const MS_PER_HOUR=3600000;
+  ctx.strokeStyle=tickColor;ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(W,0);ctx.stroke();
+  const firstHour=Math.ceil(tStart/MS_PER_HOUR)*MS_PER_HOUR;
+  ctx.font='bold 9px Gotham,Montserrat,"Arial Narrow",Arial,sans-serif';ctx.fillStyle=labelColor;
+  let drawnAny=false;
+  for(let t=firstHour;t<=tEnd;t+=MS_PER_HOUR){
+    const frac=(t-tStart)/spanMs,x=Math.round(frac*W);
+    ctx.strokeStyle=tickColor;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,6);ctx.stroke();
+    const d=new Date(t),hh=String(d.getHours()).padStart(2,'0'),mm=String(d.getMinutes()).padStart(2,'0');
+    ctx.textAlign=frac<0.08?'left':frac>0.92?'right':'center';ctx.fillText(`${hh}:${mm}`,x,19);drawnAny=true;
+  }
+  if(!drawnAny){
+    const fmt=ts=>{const d=new Date(ts);return`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
+    ctx.textAlign='left';ctx.fillText(fmt(tStart),2,19);
+    ctx.textAlign='center';ctx.fillStyle=tickColor;ctx.fillText('← less than 1 h →',W/2,19);
+    ctx.fillStyle=labelColor;ctx.textAlign='right';ctx.fillText(fmt(tEnd),W-2,19);
+  }
+}
+function refreshHeatmaps(){
+  const sliceFR=ch=>data[ch].slice(-hmWindowFR);
+  const sliceAR=ch=>data[ch].slice(-hmWindowAR);
+  const allFR=[...sliceFR('t4'),...sliceFR('t5'),...sliceFR('t6')].filter(v=>!isNaN(v));
+  const allAR=[...sliceAR('t1'),...sliceAR('t2'),...sliceAR('t3')].filter(v=>!isNaN(v));
+  const tMinFR=allFR.length?Math.max(0,Math.floor(Math.min(...allFR)/50)*50):HM_TMIN_FR;
+  const tMaxFR=allFR.length?Math.ceil(Math.max(...allFR)/50)*50:HM_TMAX_FR;
+  const tMinAR=allAR.length?Math.max(0,Math.floor(Math.min(...allAR)/50)*50):HM_TMIN_AR;
+  const tMaxAR=allAR.length?Math.ceil(Math.max(...allAR)/50)*50:HM_TMAX_AR;
+  drawHeatmapRow('hm-t4',sliceFR('t4'),tMinFR,tMaxFR);
+  drawHeatmapRow('hm-t5',sliceFR('t5'),tMinFR,tMaxFR);
+  drawHeatmapRow('hm-t6',sliceFR('t6'),tMinFR,tMaxFR);
+  drawColorbar('colorbar-fr','colorbar-fr-labels',tMinFR,tMaxFR);
+  drawHeatmapRow('hm-t1',sliceAR('t1'),tMinAR,tMaxAR);
+  drawHeatmapRow('hm-t2',sliceAR('t2'),tMinAR,tMaxAR);
+  drawHeatmapRow('hm-t3',sliceAR('t3'),tMinAR,tMaxAR);
+  drawColorbar('colorbar-ar','colorbar-ar-labels',tMinAR,tMaxAR);
+  drawTimeAxis('hm-taxis-fr',data.epoch.slice(-hmWindowFR));
+  drawTimeAxis('hm-taxis-ar',data.epoch.slice(-hmWindowAR));
+}
+
+function pushRow(t1,t2,t3,t4,t5,t6){
+  if(paused)return;
+  const now=new Date();
+  ['t1','t2','t3','t4','t5','t6'].forEach((k,i)=>{
+    const v=[t1,t2,t3,t4,t5,t6][i]; data[k].push(v);
+    if(data[k].length>MAX_POINTS) data[k].shift();
+  });
+  data.ts.push(now.toLocaleTimeString());
+  if(data.ts.length>MAX_POINTS) data.ts.shift();
+  data.epoch.push(now.getTime());
+  if(data.epoch.length>MAX_POINTS) data.epoch.shift();
+  [['sv-t1',t1],['sv-t2',t2],['sv-t3',t3],['sv-t4',t4],['sv-t5',t5],['sv-t6',t6]].forEach(([id,v])=>{
+    document.getElementById(id).textContent=isNaN(v)?'—':v.toFixed(1);
+  });
+  const L=data.ts;
+  chartFR.data.labels=L; chartFR.data.datasets[0].data=data.t6; chartFR.data.datasets[1].data=data.t2; chartFR.data.datasets[2].data=data.t4; chartFR.update('none');
+  chartAR.data.labels=L; chartAR.data.datasets[0].data=data.t5; chartAR.data.datasets[1].data=data.t3; chartAR.data.datasets[2].data=data.t1; chartAR.update('none');
+  const dtFR=data.t2.map((v,i)=>(v!=null&&data.t6[i]!=null)?v-data.t6[i]:null);
+  chartDTfr.data.labels=L; chartDTfr.data.datasets[0].data=dtFR; chartDTfr.update('none');
+  const dtAR=data.t3.map((v,i)=>(v!=null&&data.t5[i]!=null)?v-data.t5[i]:null);
+  const dtARout=data.t1.map((v,i)=>(v!=null&&data.t5[i]!=null)?v-data.t5[i]:null);
+  chartDTar.data.labels=L; chartDTar.data.datasets[0].data=dtAR; chartDTar.data.datasets[1].data=dtARout; chartDTar.update('none');
+  refreshHeatmaps();
+  if(recording){
+    recRows.push({
+      iso:now.toISOString(), date:now.toLocaleDateString('en-GB'), time:now.toLocaleTimeString('en-GB'),
+      elapsed_s:Math.round((now.getTime()-recStart)/1000),
+      t1:isNaN(t1)?'':+t1.toFixed(1),t2:isNaN(t2)?'':+t2.toFixed(1),
+      t3:isNaN(t3)?'':+t3.toFixed(1),t4:isNaN(t4)?'':+t4.toFixed(1),
+      t5:isNaN(t5)?'':+t5.toFixed(1),t6:isNaN(t6)?'':+t6.toFixed(1),
+      dT_FR:(isNaN(t2)||isNaN(t6))?'':+(t2-t6).toFixed(1),
+      dT_AR:(isNaN(t3)||isNaN(t5))?'':+(t3-t5).toFixed(1),
+      dT_riser:(isNaN(t1)||isNaN(t5))?'':+(t1-t5).toFixed(1),
+    });
+    document.getElementById('rm-rows').textContent=recRows.length;
+    recDur=Math.round((Date.now()-recStart)/1000);
+    const m=Math.floor(recDur/60),s=recDur%60;
+    document.getElementById('rm-dur').textContent=`${m}m ${s}s`;
+  }
+}
+
+// Demo temperature
+let demoT={t1:700,t2:680,t3:720,t4:650,t5:680,t6:600};
+function demoStep(){
+  const noise=()=>(Math.random()-0.5)*12,drift=()=>(Math.random()-0.5)*2;
+  Object.keys(demoT).forEach(k=>{demoT[k]=Math.max(100,Math.min(950,demoT[k]+noise()+drift()));});
+  pushRow(demoT.t1,demoT.t2,demoT.t3,demoT.t4,demoT.t5,demoT.t6);
+}
+document.getElementById('btn-demo').addEventListener('click',()=>{
+  if(demoInterval){clearInterval(demoInterval);demoInterval=null;setStatus('Demo stopped','');document.getElementById('btn-demo').textContent='Demo mode';}
+  else{if(serialPort)disconnectSerial();demoInterval=setInterval(demoStep,500);setStatus('Demo mode — simulated data','demo');document.getElementById('btn-demo').textContent='Stop demo';}
+});
+
+// Serial temp
+document.getElementById('btn-connect').addEventListener('click',async()=>{
+  if(serialPort){disconnectSerial();return;}
+  if(!('serial' in navigator)){alert('Web Serial not supported. Use Chrome or Edge.');return;}
+  try{serialPort=await navigator.serial.requestPort();await serialPort.open({baudRate:9600});setStatus('Connected via serial port','connected');document.getElementById('btn-connect').textContent='Disconnect';readSerial();}
+  catch(e){serialPort=null;alert('Could not open serial port: '+e.message);}
+});
+async function readSerial(){
+  const dec=new TextDecoder();
+  while(serialPort&&serialPort.readable){
+    serialReader=serialPort.readable.getReader();
+    try{while(true){const{value,done}=await serialReader.read();if(done)break;serialBuf+=dec.decode(value);let nl;while((nl=serialBuf.indexOf('\n'))>=0){const line=serialBuf.slice(0,nl).trim();serialBuf=serialBuf.slice(nl+1);parseTempLine(line);}}}
+    catch(e){}finally{serialReader.releaseLock();}
+  }
+}
+function parseTempLine(line){
+  const vals=line.replace(/T\d:/gi,'').split(',').map(Number);
+  if(vals.length>=6&&vals.every(v=>!isNaN(v)))pushRow(...vals.slice(0,6));
+}
+async function disconnectSerial(){
+  if(serialReader){try{await serialReader.cancel();}catch(_){}serialReader=null;}
+  if(serialPort){try{await serialPort.close();}catch(_){}serialPort=null;}
+  setStatus('Disconnected','');document.getElementById('btn-connect').textContent='Connect serial port';
+}
+function setStatus(msg,state){statusTxt.textContent=msg;dot.className='status-dot'+(state?' '+state:'');}
+
+// Temp recording
+document.getElementById('btn-rec').addEventListener('click',()=>{if(!recording)startRecording();else stopRecording();});
+document.getElementById('btn-dl-now').addEventListener('click',()=>{if(recording)downloadCsv(buildTempCsv(),recFilename());});
+document.getElementById('btn-sessions').addEventListener('click',()=>{recPanel.classList.toggle('visible');if(recPanel.classList.contains('visible'))renderSessions();});
+function recFilename(){const d=new Date(recStart);return`CLC_Temp_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}.csv`;}
+function pad(n){return String(n).padStart(2,'0');}
+
+function buildTempCsv(){
+  const fn=recFilename().replace('.csv','');const startDt=new Date(recStart);
+  const durSec=recRows.length?recRows[recRows.length-1].elapsed_s:0;
+  const durM=Math.floor(durSec/60),durS=durSec%60;
+  const meta=[
+    ['Chemical Looping System — Temperature Log'],['Session',fn],
+    ['Date',startDt.toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'})],
+    ['Start time',startDt.toLocaleTimeString('en-GB')],['Duration',`${durM} min ${durS} sec`],
+    ['Total samples',recRows.length],['Sample interval','~0.5 s (demo) / hardware rate (serial)'],
+    ['Temperature unit','Degrees Celsius (°C)'],[''],
+    ['--- CHANNEL DESCRIPTIONS ---'],
+    ['T1','Air Reactor (AR) — Out (°C)'],['T2','Fuel Reactor (FR) — Bed Top (°C)'],
+    ['T3','Air Reactor (AR) — Bed Top (°C)'],['T4','Fuel Reactor (FR) — Out (°C)'],
+    ['T5','Air Reactor (AR) — Bed Base (°C)'],['T6','Fuel Reactor (FR) — Bed Base (°C)'],
+    ['dT_FR','Fuel Reactor bed gradient: T2 − T6 (°C)'],['dT_AR','Air Reactor bed gradient: T3 − T5 (°C)'],
+    ['dT_AR_out','Air Reactor full-loop gradient: T1 − T5 (°C)'],[''],['--- DATA ---'],
+  ].map(r=>r.map(c=>`"${c}"`).join(',')).join('\r\n');
+  const colHeader=['Date','Time','Elapsed (s)','T1 — AR Out (°C)','T2 — FR Bed Top (°C)','T3 — AR Bed Top (°C)','T4 — FR Out (°C)','T5 — AR Bed Base (°C)','T6 — FR Bed Base (°C)','dT_FR = T2−T6 (°C)','dT_AR = T3−T5 (°C)','dT_AR_out = T1−T5 (°C)'].map(c=>`"${c}"`).join(',');
+  const rows=recRows.map(r=>[`"${r.date}"`,`"${r.time}"`,r.elapsed_s,r.t1===''?'':r.t1,r.t2===''?'':r.t2,r.t3===''?'':r.t3,r.t4===''?'':r.t4,r.t5===''?'':r.t5,r.t6===''?'':r.t6,r.dT_FR,r.dT_AR,r.dT_riser].join(',')).join('\r\n');
+  return meta+'\r\n'+colHeader+'\r\n'+rows;
+}
+
+function startRecording(){
+  recording=true;recRows=[];recStart=Date.now();
+  document.getElementById('btn-rec').textContent='■ Stop recording';document.getElementById('btn-rec').classList.add('recording');
+  document.getElementById('rm-start').textContent=new Date(recStart).toLocaleTimeString();
+  document.getElementById('rm-file').textContent=recFilename();recPanel.classList.add('visible');statusCsv.textContent='● REC';
+  recTimer=setInterval(()=>{recDur=Math.round((Date.now()-recStart)/1000);const m=Math.floor(recDur/60),s=recDur%60;document.getElementById('rm-dur').textContent=`${m}m ${s}s`;},1000);
+  if(document.getElementById('chk-autosave').checked)scheduleAutoSave();
+}
+function stopRecording(){
+  recording=false;clearInterval(recTimer);clearTimeout(autoSaveTimer);fileHandle=null;
+  document.getElementById('btn-rec').textContent='● Start recording';document.getElementById('btn-rec').classList.remove('recording');statusCsv.textContent='';
+  if(recRows.length){saveToBrowserStorage();downloadCsv(buildTempCsv(),recFilename());}renderSessions();
+}
+function scheduleAutoSave(){
+  const secs=parseInt(document.getElementById('sel-interval').value,10);
+  autoSaveTimer=setTimeout(async()=>{if(!recording)return;saveToBrowserStorage();if(document.getElementById('chk-autosave').checked){try{await autoSaveToDisk();}catch(_){}}scheduleAutoSave();},secs*1000);
+}
+async function autoSaveToDisk(){
+  if(!('showSaveFilePicker' in window))return;
+  if(!fileHandle)fileHandle=await window.showSaveFilePicker({suggestedName:recFilename(),types:[{description:'CSV',accept:{'text/csv':['.csv']}}]});
+  const writable=await fileHandle.createWritable();await writable.write(buildTempCsv());await writable.close();
+}
+function saveToBrowserStorage(){
+  const key='clc_sess_'+recStart;localStorage.setItem(key,buildTempCsv());
+  sessions=sessions.filter(s=>s.key!==key);sessions.unshift({key,name:recFilename(),rows:recRows.length,start:recStart});
+  localStorage.setItem('clc_sessions',JSON.stringify(sessions.slice(0,20)));
+}
+function downloadCsv(csv,filename){
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=filename;a.click();URL.revokeObjectURL(a.href);
+}
+function renderSessions(){
+  sessions=JSON.parse(localStorage.getItem('clc_sessions')||'[]');
+  sessList.innerHTML=sessions.length?'':'<div class="no-sessions">No saved sessions yet.</div>';
+  sessions.forEach(s=>{
+    const row=document.createElement('div');row.className='session-row';
+    row.innerHTML=`<span class="sess-name">${s.name}</span><span class="sess-meta">${s.rows} rows · ${new Date(s.start).toLocaleString()}</span><div class="sess-btns"><button class="sess-dl" data-key="${s.key}">Download</button><button class="sess-del" data-key="${s.key}">Delete</button></div>`;
+    sessList.appendChild(row);
+  });
+  sessList.querySelectorAll('.sess-dl').forEach(b=>b.addEventListener('click',()=>{const csv=localStorage.getItem(b.dataset.key);if(csv)downloadCsv(csv,b.dataset.key.replace('clc_sess_','CLC_')+'.csv');}));
+  sessList.querySelectorAll('.sess-del').forEach(b=>b.addEventListener('click',()=>{localStorage.removeItem(b.dataset.key);sessions=sessions.filter(s=>s.key!==b.dataset.key);localStorage.setItem('clc_sessions',JSON.stringify(sessions));renderSessions();}));
+}
+
+document.getElementById('btn-clear').addEventListener('click',()=>{
+  CHANNELS.forEach(k=>{data[k]=[];}); data.ts=[];data.epoch=[];
+  [chartFR,chartAR,chartDTfr,chartDTar].forEach(c=>{c.data.labels=[];c.data.datasets.forEach(d=>d.data=[]);c.update('none');});
+  CHANNELS.forEach(k=>{const el=document.getElementById('sv-'+k);if(el)el.textContent='—';});
+  refreshHeatmaps();
+});
+document.getElementById('btn-pause').addEventListener('click',()=>{
+  paused=!paused;document.getElementById('btn-pause').textContent=paused?'Resume':'Pause';document.getElementById('btn-pause').classList.toggle('active',paused);
+});
+document.getElementById('hm-window-fr').addEventListener('change',e=>{hmWindowFR=parseInt(e.target.value);refreshHeatmaps();});
+document.getElementById('hm-window-ar').addEventListener('change',e=>{hmWindowAR=parseInt(e.target.value);refreshHeatmaps();});
+drawColorbar('colorbar-fr','colorbar-fr-labels',HM_TMIN_FR,HM_TMAX_FR);
+drawColorbar('colorbar-ar','colorbar-ar-labels',HM_TMIN_AR,HM_TMAX_AR);
+refreshHeatmaps();
+window.addEventListener('resize',()=>refreshHeatmaps());
+
+
+// ════════════════════════════════════════════════════════════════
+//  CO₂ MONITOR
+// ════════════════════════════════════════════════════════════════
+const CO2_MAX_POINTS = 600;
+let co2Data = { ppm:[], pct:[], ts:[], epoch:[] };
+let co2Paused=false, co2Recording=false, co2DemoInterval=null;
+let co2Port=null, co2Reader=null, co2Buf='';
+let co2RecRows=[], co2RecStart=null, co2RecDur=0, co2RecTimer=null;
+let co2AutoSaveTimer=null, co2FileHandle=null;
+let co2Sessions=JSON.parse(localStorage.getItem('clc_co2_sessions')||'[]');
+
+const co2Dot    = document.getElementById('co2-status-dot');
+const co2TxtEl  = document.getElementById('co2-status-text');
+const co2CsvEl  = document.getElementById('status-csv-co2');
+const co2RecPan = document.getElementById('co2-rec-panel');
+const co2SessList=document.getElementById('co2-session-list');
+
+// CO2 Charts
+const chartCo2Ppm = makeLineChart('chart-co2-ppm',[
+  { label:'CO₂ (ppm)', data:[], borderColor:'#7c3aed', borderWidth:1.5, pointRadius:0, tension:0.3,
+    fill:true, backgroundColor:'rgba(124,58,237,0.08)' },
+],'ppm');
+// Percent chart with combustion zone annotations via plugin
+const chartCo2Pct = (()=>{
+  const ctx=document.getElementById('chart-co2-pct').getContext('2d');
+  return new Chart(ctx,{
+    type:'line',
+    data:{labels:[],datasets:[
+      {label:'CO₂ (%)',data:[],borderColor:'#a78bfa',borderWidth:1.5,pointRadius:0,tension:0.3,
+       fill:true,backgroundColor:'rgba(167,139,250,0.08)'},
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{callbacks:{label:c=>` CO₂: ${c.parsed.y!==null?c.parsed.y.toFixed(2):'—'}%`}},
+        annotation:undefined
+      },
+      scales:{
+        x:{ticks:{maxTicksLimit:8,maxRotation:0},grid:{color:'rgba(0,0,0,0.06)'}},
+        y:{title:{display:true,text:'%'},min:0,max:100,ticks:{maxTicksLimit:8},grid:{color:'rgba(0,0,0,0.06)'},
+          afterBuildTicks:(axis)=>{
+            // add threshold ticks
+            const extras=[1,5,12,16,20];
+            extras.forEach(v=>{if(!axis.ticks.find(t=>t.value===v))axis.ticks.push({value:v,label:v+'%'});});
+            axis.ticks.sort((a,b)=>a.value-b.value);
+          }
+        }
+      }
+    }
+  });
+})();
+
+function co2StatusLabel(pct){
+  if(pct<1)   return 'TRACE';
+  if(pct<5)   return 'LOW_COMBUSTION';
+  if(pct<12)  return 'MODERATE_COMBUSTION';
+  if(pct<16)  return 'NORMAL_COMBUSTION';
+  if(pct<20)  return 'RICH_COMBUSTION';
+  return 'VERY_HIGH';
+}
+
+function pushCo2(ppm){
+  if(co2Paused)return;
+  const now=new Date();
+  const pct=ppm/10000;
+  const status=co2StatusLabel(pct);
+  co2Data.ppm.push(ppm);  if(co2Data.ppm.length>CO2_MAX_POINTS)co2Data.ppm.shift();
+  co2Data.pct.push(pct);  if(co2Data.pct.length>CO2_MAX_POINTS)co2Data.pct.shift();
+  co2Data.ts.push(now.toLocaleTimeString()); if(co2Data.ts.length>CO2_MAX_POINTS)co2Data.ts.shift();
+  co2Data.epoch.push(now.getTime()); if(co2Data.epoch.length>CO2_MAX_POINTS)co2Data.epoch.shift();
+
+  document.getElementById('co2-sv-ppm').textContent=ppm.toLocaleString();
+  document.getElementById('co2-sv-pct').textContent=pct.toFixed(2);
+  const statusEl=document.getElementById('co2-sv-status');
+  statusEl.innerHTML=`<span class="co2-badge ${status}">${status.replace(/_/g,' ')}</span>`;
+
+  const L=co2Data.ts;
+  chartCo2Ppm.data.labels=L; chartCo2Ppm.data.datasets[0].data=co2Data.ppm; chartCo2Ppm.update('none');
+  chartCo2Pct.data.labels=L; chartCo2Pct.data.datasets[0].data=co2Data.pct; chartCo2Pct.update('none');
+
+  if(co2Recording){
+    co2RecRows.push({
+      iso:now.toISOString(),date:now.toLocaleDateString('en-GB'),time:now.toLocaleTimeString('en-GB'),
+      elapsed_s:Math.round((now.getTime()-co2RecStart)/1000),
+      ppm, pct:+pct.toFixed(4), status,
+    });
+    document.getElementById('co2-rm-rows').textContent=co2RecRows.length;
+    co2RecDur=Math.round((Date.now()-co2RecStart)/1000);
+    const m=Math.floor(co2RecDur/60),s=co2RecDur%60;
+    document.getElementById('co2-rm-dur').textContent=`${m}m ${s}s`;
+  }
+}
+
+// CO2 serial parser
+function parseCo2Line(line){
+  // ExplorIR streaming: "Z XXXXX" (filtered) or "z XXXXX" (raw)
+  // Also accept JSON from Arduino: {"ppm":XXXXX,"percent":X.XX,"status":"..."}
+  line=line.trim();
+  if(line.startsWith('{')){
+    try{const obj=JSON.parse(line);if(typeof obj.ppm==='number')pushCo2(obj.ppm);}catch(e){}
+    return;
+  }
+  if(line.length>=3 && line.charAt(0)==='Z'){
+    const v=parseInt(line.substring(2),10);
+    if(!isNaN(v))pushCo2(v);
+  }
+}
+
+// CO2 Demo — realistic combustion ramp
+let co2DemoState={ppm:80000,trend:0};
+function co2DemoStep(){
+  co2DemoState.trend+=(Math.random()-0.48)*500;
+  co2DemoState.trend=Math.max(-2000,Math.min(2000,co2DemoState.trend));
+  co2DemoState.ppm=Math.max(5000,Math.min(200000,co2DemoState.ppm+co2DemoState.trend+(Math.random()-0.5)*800));
+  pushCo2(Math.round(co2DemoState.ppm));
+}
+document.getElementById('btn-co2-demo').addEventListener('click',()=>{
+  if(co2DemoInterval){clearInterval(co2DemoInterval);co2DemoInterval=null;setCo2Status('CO₂ demo stopped','');document.getElementById('btn-co2-demo').textContent='CO₂ Demo';}
+  else{if(co2Port)disconnectCo2();co2DemoInterval=setInterval(co2DemoStep,500);setCo2Status('CO₂ demo — simulated data','demo');document.getElementById('btn-co2-demo').textContent='Stop CO₂ demo';}
+});
+
+// CO2 serial connect
+document.getElementById('btn-co2-connect').addEventListener('click',async()=>{
+  if(co2Port){disconnectCo2();return;}
+  if(!('serial' in navigator)){alert('Web Serial not supported. Use Chrome or Edge.');return;}
+  try{co2Port=await navigator.serial.requestPort();await co2Port.open({baudRate:115200});setCo2Status('ExplorIR-M connected (115200 baud)','co2-connected');document.getElementById('btn-co2-connect').textContent='Disconnect CO₂';readCo2Serial();}
+  catch(e){co2Port=null;alert('Could not open CO₂ port: '+e.message);}
+});
+async function readCo2Serial(){
+  const dec=new TextDecoder();
+  while(co2Port&&co2Port.readable){
+    co2Reader=co2Port.readable.getReader();
+    try{while(true){const{value,done}=await co2Reader.read();if(done)break;co2Buf+=dec.decode(value);let nl;while((nl=co2Buf.indexOf('\n'))>=0){const line=co2Buf.slice(0,nl).trim();co2Buf=co2Buf.slice(nl+1);parseCo2Line(line);}}}
+    catch(e){}finally{co2Reader.releaseLock();}
+  }
+}
+async function disconnectCo2(){
+  if(co2Reader){try{await co2Reader.cancel();}catch(_){}co2Reader=null;}
+  if(co2Port){try{await co2Port.close();}catch(_){}co2Port=null;}
+  setCo2Status('CO₂ sensor disconnected','');document.getElementById('btn-co2-connect').textContent='Connect CO₂ port';
+}
+function setCo2Status(msg,state){co2TxtEl.textContent=msg;co2Dot.className='status-dot'+(state?' '+state:'');}
+
+// CO2 CSV builder
+function co2RecFilename(){const d=new Date(co2RecStart);return`CLC_CO2_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}.csv`;}
+function buildCo2Csv(){
+  const fn=co2RecFilename().replace('.csv','');const startDt=new Date(co2RecStart);
+  const durSec=co2RecRows.length?co2RecRows[co2RecRows.length-1].elapsed_s:0;
+  const durM=Math.floor(durSec/60),durS=durSec%60;
+  const meta=[
+    ['Chemical Looping System — CO₂ Analyzer Log'],['Session',fn],
+    ['Sensor','ExplorIR-M 100% CO₂ (Filtered reading, Z command)'],
+    ['Arduino board','Mega 2560 — Serial1 TX1/RX1 pins 18/19'],
+    ['Date',startDt.toLocaleDateString('en-GB',{weekday:'long',year:'numeric',month:'long',day:'numeric'})],
+    ['Start time',startDt.toLocaleTimeString('en-GB')],['Duration',`${durM} min ${durS} sec`],
+    ['Total samples',co2RecRows.length],['Sample rate','~2 samples/sec (streaming mode K 1)'],
+    [''],['--- COMBUSTION THRESHOLDS ---'],
+    ['TRACE','< 1% CO₂'],['LOW_COMBUSTION','1% – 5%'],['MODERATE_COMBUSTION','5% – 12%'],
+    ['NORMAL_COMBUSTION','12% – 16%'],['RICH_COMBUSTION','16% – 20%'],['VERY_HIGH','> 20%'],
+    [''],['--- DATA ---'],
+  ].map(r=>r.map(c=>`"${c}"`).join(',')).join('\r\n');
+  const colHeader=['"Date"','"Time"','"Elapsed (s)"','"CO2 (ppm)"','"CO2 (%)"','"Status"'].join(',');
+  const rows=co2RecRows.map(r=>[`"${r.date}"`,`"${r.time}"`,r.elapsed_s,r.ppm,r.pct,`"${r.status}"`].join(',')).join('\r\n');
+  return meta+'\r\n'+colHeader+'\r\n'+rows;
+}
+
+// CO2 recording lifecycle
+document.getElementById('btn-co2-rec').addEventListener('click',()=>{if(!co2Recording)startCo2Recording();else stopCo2Recording();});
+document.getElementById('btn-co2-dl-now').addEventListener('click',()=>{if(co2Recording)downloadCsv(buildCo2Csv(),co2RecFilename());});
+document.getElementById('btn-co2-sessions').addEventListener('click',()=>{co2RecPan.classList.toggle('visible');if(co2RecPan.classList.contains('visible'))renderCo2Sessions();});
+function startCo2Recording(){
+  co2Recording=true;co2RecRows=[];co2RecStart=Date.now();
+  document.getElementById('btn-co2-rec').textContent='■ Stop recording';document.getElementById('btn-co2-rec').classList.add('recording');
+  document.getElementById('co2-rm-start').textContent=new Date(co2RecStart).toLocaleTimeString();
+  document.getElementById('co2-rm-file').textContent=co2RecFilename();co2RecPan.classList.add('visible');co2CsvEl.textContent='● REC';
+  co2RecTimer=setInterval(()=>{co2RecDur=Math.round((Date.now()-co2RecStart)/1000);const m=Math.floor(co2RecDur/60),s=co2RecDur%60;document.getElementById('co2-rm-dur').textContent=`${m}m ${s}s`;},1000);
+  if(document.getElementById('chk-co2-autosave').checked)scheduleCo2AutoSave();
+}
+function stopCo2Recording(){
+  co2Recording=false;clearInterval(co2RecTimer);clearTimeout(co2AutoSaveTimer);co2FileHandle=null;
+  document.getElementById('btn-co2-rec').textContent='● Start recording';document.getElementById('btn-co2-rec').classList.remove('recording');co2CsvEl.textContent='';
+  if(co2RecRows.length){saveCo2ToBrowserStorage();downloadCsv(buildCo2Csv(),co2RecFilename());}renderCo2Sessions();
+}
+function scheduleCo2AutoSave(){
+  const secs=parseInt(document.getElementById('sel-co2-interval').value,10);
+  co2AutoSaveTimer=setTimeout(async()=>{if(!co2Recording)return;saveCo2ToBrowserStorage();if(document.getElementById('chk-co2-autosave').checked){try{await autoSaveCo2ToDisk();}catch(_){}}scheduleCo2AutoSave();},secs*1000);
+}
+async function autoSaveCo2ToDisk(){
+  if(!('showSaveFilePicker' in window))return;
+  if(!co2FileHandle)co2FileHandle=await window.showSaveFilePicker({suggestedName:co2RecFilename(),types:[{description:'CSV',accept:{'text/csv':['.csv']}}]});
+  const writable=await co2FileHandle.createWritable();await writable.write(buildCo2Csv());await writable.close();
+}
+function saveCo2ToBrowserStorage(){
+  const key='clc_co2_'+co2RecStart;localStorage.setItem(key,buildCo2Csv());
+  co2Sessions=co2Sessions.filter(s=>s.key!==key);co2Sessions.unshift({key,name:co2RecFilename(),rows:co2RecRows.length,start:co2RecStart});
+  localStorage.setItem('clc_co2_sessions',JSON.stringify(co2Sessions.slice(0,20)));
+}
+function renderCo2Sessions(){
+  co2Sessions=JSON.parse(localStorage.getItem('clc_co2_sessions')||'[]');
+  co2SessList.innerHTML=co2Sessions.length?'':'<div class="no-sessions">No saved CO₂ sessions yet.</div>';
+  co2Sessions.forEach(s=>{
+    const row=document.createElement('div');row.className='session-row';
+    row.innerHTML=`<span class="sess-name">${s.name}</span><span class="sess-meta">${s.rows} rows · ${new Date(s.start).toLocaleString()}</span><div class="sess-btns"><button class="sess-dl" data-key="${s.key}">Download</button><button class="sess-del" data-key="${s.key}">Delete</button></div>`;
+    co2SessList.appendChild(row);
+  });
+  co2SessList.querySelectorAll('.sess-dl').forEach(b=>b.addEventListener('click',()=>{const csv=localStorage.getItem(b.dataset.key);if(csv)downloadCsv(csv,b.dataset.key.replace('clc_co2_','CLC_CO2_')+'.csv');}));
+  co2SessList.querySelectorAll('.sess-del').forEach(b=>b.addEventListener('click',()=>{localStorage.removeItem(b.dataset.key);co2Sessions=co2Sessions.filter(s=>s.key!==b.dataset.key);localStorage.setItem('clc_co2_sessions',JSON.stringify(co2Sessions));renderCo2Sessions();}));
+}
+document.getElementById('btn-co2-clear').addEventListener('click',()=>{
+  co2Data={ppm:[],pct:[],ts:[],epoch:[]};
+  [chartCo2Ppm,chartCo2Pct].forEach(c=>{c.data.labels=[];c.data.datasets.forEach(d=>d.data=[]);c.update('none');});
+  document.getElementById('co2-sv-ppm').textContent='—';document.getElementById('co2-sv-pct').textContent='—';document.getElementById('co2-sv-status').textContent='—';
+});
+document.getElementById('btn-co2-pause').addEventListener('click',()=>{
+  co2Paused=!co2Paused;document.getElementById('btn-co2-pause').textContent=co2Paused?'Resume':'Pause';document.getElementById('btn-co2-pause').classList.toggle('active',co2Paused);
+});
+
+
+// ════════════════════════════════════════════════════════════════
+//  GRAPH SAVERS
+// ════════════════════════════════════════════════════════════════
+function saveChartImage(canvasId, name){
+  const canvas=document.getElementById(canvasId);
+  if(!canvas){alert('Chart not found.');return;}
+  // Create off-screen canvas with white background
+  const offscreen=document.createElement('canvas');
+  offscreen.width=canvas.width; offscreen.height=canvas.height;
+  const ctx=offscreen.getContext('2d');
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,offscreen.width,offscreen.height);
+  ctx.drawImage(canvas,0,0);
+  const ts=new Date();
+  const fname=`CLC_${name}_${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}.png`;
+  const a=document.createElement('a');a.href=offscreen.toDataURL('image/png');a.download=fname;a.click();
+}
+
+function saveHeatmapImage(id1,id2,id3,name){
+  const c1=document.getElementById(id1),c2=document.getElementById(id2),c3=document.getElementById(id3);
+  if(!c1||!c2||!c3)return;
+  const W=c1.width,rowH=c1.height,gap=4,pad2=24;
+  const offscreen=document.createElement('canvas');
+  offscreen.width=W; offscreen.height=rowH*3+gap*2+pad2;
+  const ctx=offscreen.getContext('2d');
+  ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,offscreen.width,offscreen.height);
+  ctx.drawImage(c1,0,0);
+  ctx.drawImage(c2,0,rowH+gap);
+  ctx.drawImage(c3,0,(rowH+gap)*2);
+  const ts=new Date();
+  const fname=`CLC_${name}_${ts.getFullYear()}${pad(ts.getMonth()+1)}${pad(ts.getDate())}_${pad(ts.getHours())}${pad(ts.getMinutes())}.png`;
+  const a=document.createElement('a');a.href=offscreen.toDataURL('image/png');a.download=fname;a.click();
+}
+
+function saveCo2Graphs(){
+  saveChartImage('chart-co2-ppm','CO2_PPM');
+  setTimeout(()=>saveChartImage('chart-co2-pct','CO2_Percent'),300);
+}
+
+document.getElementById('btn-save-graph-temp').addEventListener('click',()=>{
+  const charts=[['chart-fr','FR_Temperature'],['chart-ar','AR_Temperature'],['chart-dT-fr','FR_DeltaT'],['chart-dT-ar','AR_DeltaT']];
+  charts.forEach(([id,name],i)=>setTimeout(()=>saveChartImage(id,name),i*300));
+});
+
+document.getElementById('btn-save-all-temp').addEventListener('click',()=>{
+  const charts=[['chart-fr','FR_Temperature'],['chart-ar','AR_Temperature'],['chart-dT-fr','FR_DeltaT'],['chart-dT-ar','AR_DeltaT']];
+  charts.forEach(([id,name],i)=>setTimeout(()=>saveChartImage(id,name),i*300));
+});
+document.getElementById('btn-save-all-co2').addEventListener('click',saveCo2Graphs);
+document.getElementById('btn-save-all-graphs').addEventListener('click',()=>{
+  const all=[['chart-fr','FR_Temperature'],['chart-ar','AR_Temperature'],['chart-dT-fr','FR_DeltaT'],['chart-dT-ar','AR_DeltaT'],['chart-co2-ppm','CO2_PPM'],['chart-co2-pct','CO2_Percent']];
+  all.forEach(([id,name],i)=>setTimeout(()=>saveChartImage(id,name),i*350));
+});
+
+
+// ════════════════════════════════════════════════════════════════
+//  COMBINED CSV EXPORT
+// ════════════════════════════════════════════════════════════════
+document.getElementById('btn-dl-temp-only').addEventListener('click',()=>{
+  if(!recRows.length&&!sessions.length){alert('No temperature data recorded yet. Start recording first.');return;}
+  if(recRows.length){downloadCsv(buildTempCsv(),recFilename());}
+  else{sessions=JSON.parse(localStorage.getItem('clc_sessions')||'[]');if(sessions.length){const csv=localStorage.getItem(sessions[0].key);if(csv)downloadCsv(csv,sessions[0].name);}}
+});
+document.getElementById('btn-dl-co2-only').addEventListener('click',()=>{
+  if(!co2RecRows.length&&!co2Sessions.length){alert('No CO₂ data recorded yet. Start CO₂ recording first.');return;}
+  if(co2RecRows.length){downloadCsv(buildCo2Csv(),co2RecFilename());}
+  else{co2Sessions=JSON.parse(localStorage.getItem('clc_co2_sessions')||'[]');if(co2Sessions.length){const csv=localStorage.getItem(co2Sessions[0].key);if(csv)downloadCsv(csv,co2Sessions[0].name);}}
+});
+document.getElementById('btn-dl-combined').addEventListener('click',()=>{
+  if(!recRows.length&&!co2RecRows.length){alert('No data recorded yet. Record both temperature and CO₂ data first.');return;}
+  downloadCsv(buildCombinedCsv(),combinedFilename());
+});
+
+function combinedFilename(){const d=new Date();return`CLC_Combined_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}.csv`;}
+
+function buildCombinedCsv(){
+  const now=new Date();
+  const meta=[
+    ['Chemical Looping System — Combined Temperature + CO₂ Log'],
+    ['Generated',now.toLocaleString('en-GB')],
+    ['Temperature rows',recRows.length],['CO₂ rows',co2RecRows.length],
+    [''],['--- COLUMNS ---'],
+    ['Date','DD/MM/YYYY'],['Time','HH:MM:SS'],['Elapsed_Temp_s','Elapsed seconds from temperature recording start'],
+    ['T1','Air Reactor Out (°C)'],['T2','Fuel Reactor Bed Top (°C)'],['T3','Air Reactor Bed Top (°C)'],
+    ['T4','Fuel Reactor Out (°C)'],['T5','Air Reactor Bed Base (°C)'],['T6','Fuel Reactor Bed Base (°C)'],
+    ['dT_FR','T2 − T6 (°C)'],['dT_AR','T3 − T5 (°C)'],['dT_AR_out','T1 − T5 (°C)'],
+    ['Elapsed_CO2_s','Elapsed seconds from CO₂ recording start'],['CO2_ppm','CO₂ concentration (ppm)'],
+    ['CO2_pct','CO₂ concentration (%)'],['CO2_status','Combustion zone classification'],
+    [''],['--- DATA ---'],
+  ].map(r=>r.map(c=>`"${c}"`).join(',')).join('\r\n');
+
+  const colHeader=['"Date"','"Time"','"Elapsed_Temp_s"','"T1 AR Out"','"T2 FR Bed Top"','"T3 AR Bed Top"','"T4 FR Out"','"T5 AR Bed Base"','"T6 FR Bed Base"','"dT_FR"','"dT_AR"','"dT_AR_out"','"Elapsed_CO2_s"','"CO2_ppm"','"CO2_pct"','"CO2_status"'].join(',');
+
+  // Build a map: second-key → {tempRow, co2Row}
+  // Use ISO second (first 19 chars of ISO string) as merge key
+  const tempMap=new Map();
+  recRows.forEach(r=>{ const k=r.iso.slice(0,19); if(!tempMap.has(k))tempMap.set(k,r); });
+  const co2Map=new Map();
+  co2RecRows.forEach(r=>{ const k=r.iso.slice(0,19); if(!co2Map.has(k))co2Map.set(k,r); });
+
+  // Union of all second-keys, sorted
+  const allKeys=[...new Set([...tempMap.keys(),...co2Map.keys()])].sort();
+
+  const rows=allKeys.map(k=>{
+    const t=tempMap.get(k);
+    const c=co2Map.get(k);
+    const date=t?t.date:(c?c.date:'');
+    const time=t?t.time:(c?c.time:'');
+    return [
+      `"${date}"`,`"${time}"`,
+      t?t.elapsed_s:'',
+      t?t.t1:'',t?t.t2:'',t?t.t3:'',t?t.t4:'',t?t.t5:'',t?t.t6:'',
+      t?t.dT_FR:'',t?t.dT_AR:'',t?t.dT_riser:'',
+      c?c.elapsed_s:'',
+      c?c.ppm:'',c?c.pct:'',c?`"${c.status}"`:'',
+    ].join(',');
+  }).join('\r\n');
+  return meta+'\r\n'+colHeader+'\r\n'+rows;
+}
+
+function renderCombinedSessions(){
+  // Temp
+  sessions=JSON.parse(localStorage.getItem('clc_sessions')||'[]');
+  const tEl=document.getElementById('combined-temp-sessions');
+  tEl.innerHTML=sessions.length?'':'<div class="no-sessions">No temperature sessions.</div>';
+  sessions.forEach(s=>{
+    const row=document.createElement('div');row.className='session-row';
+    row.innerHTML=`<span class="sess-name">${s.name}</span><span class="sess-meta">${s.rows} rows · ${new Date(s.start).toLocaleString()}</span><div class="sess-btns"><button class="sess-dl" data-key="${s.key}">Download</button></div>`;
+    tEl.appendChild(row);
+  });
+  tEl.querySelectorAll('.sess-dl').forEach(b=>b.addEventListener('click',()=>{const csv=localStorage.getItem(b.dataset.key);if(csv)downloadCsv(csv,b.dataset.key.replace('clc_sess_','CLC_')+'.csv');}));
+  // CO2
+  co2Sessions=JSON.parse(localStorage.getItem('clc_co2_sessions')||'[]');
+  const cEl=document.getElementById('combined-co2-sessions');
+  cEl.innerHTML=co2Sessions.length?'':'<div class="no-sessions">No CO₂ sessions.</div>';
+  co2Sessions.forEach(s=>{
+    const row=document.createElement('div');row.className='session-row';
+    row.innerHTML=`<span class="sess-name">${s.name}</span><span class="sess-meta">${s.rows} rows · ${new Date(s.start).toLocaleString()}</span><div class="sess-btns"><button class="sess-dl" data-key="${s.key}">Download</button></div>`;
+    cEl.appendChild(row);
+  });
+  cEl.querySelectorAll('.sess-dl').forEach(b=>b.addEventListener('click',()=>{const csv=localStorage.getItem(b.dataset.key);if(csv)downloadCsv(csv,b.dataset.key.replace('clc_co2_','CLC_CO2_')+'.csv');}));
+}
+
+</script>
+</body>
+</html>
